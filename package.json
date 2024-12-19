@@ -1,0 +1,45 @@
+{
+  "name": "roam-research-mcp",
+  "version": "0.2.0",
+  "description": "A Model Context Protocol (MCP) server for Roam Research API integration",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/2b3pro/roam-research-mcp.git"
+  },
+  "keywords": [
+    "mcp",
+    "roam-research",
+    "api",
+    "claude",
+    "model-context-protocol"
+  ],
+  "author": "Ian Shen / 2B3 PRODUCTIONS LLC",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/2b3pro/roam-research-mcp/issues"
+  },
+  "homepage": "https://github.com/2b3pro/roam-research-mcp#readme",
+  "type": "module",
+  "bin": {
+    "roam-research": "./build/index.js"
+  },
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "tsc && node -e \"require('fs').chmodSync('build/index.js', '755')\"",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "0.6.0",
+    "@roam-research/roam-api-sdk": "^0.10.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  }
+}
