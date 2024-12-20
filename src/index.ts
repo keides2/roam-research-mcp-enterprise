@@ -24,6 +24,15 @@ import * as dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync } from 'fs';
+import { parseMarkdown, convertToRoamActions, type BatchAction } from './markdown-utils.js';
+
+// Define RoamBlock interface
+interface RoamBlock {
+  uid: string;
+  string: string;
+  order: number;
+  children: RoamBlock[];
+}
 
 // Get the project root from the script path
 const scriptPath = process.argv[1];  // Full path to the running script
@@ -94,13 +103,14 @@ class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.1.0',
+        version: '0.5.0',
       },
       {
-        capabilities: {
-          tools: {
-            search_blocks: {},
-            create_page: {},
+          capabilities: {
+            tools: {
+              search_blocks: {},
+              search_page_titles: {},
+              create_page: {},
             create_block: {},
             pull_data: {},
             pull_many_data: {},
@@ -108,7 +118,8 @@ class RoamServer {
             update_block: {},
             delete_block: {},
             delete_page: {},
-            batch_actions: {}
+            batch_actions: {},
+            import_nested_markdown: {}
           },
         },
       }
@@ -126,7 +137,62 @@ class RoamServer {
 
   private setupToolHandlers() {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
-      tools: [
+        tools: [
+          // Search page titles
+          {
+            name: 'search_page_titles',
+            description: 'Search for pages by title',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                search_string: {
+                  type: 'string',
+                  description: 'Text to search for in page titles',
+                },
+              },
+              required: ['search_string'],
+            },
+          },
+          // Read page
+          {
+            name: 'read_page_by_title',
+            description: 'Read a page\'s content by title and recursively resolve block references',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                title: {
+                  type: 'string',
+                  description: 'Title of the page to read',
+                },
+              },
+              required: ['title'],
+            },
+          },
+          // Import nested markdown
+          {
+            name: 'import_nested_markdown',
+            description: 'Import nested markdown content into Roam as blocks',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                page_uid: {
+                  type: 'string',
+                  description: 'UID of the page to add content to',
+                },
+                markdown: {
+                  type: 'string',
+                  description: 'Markdown content to import',
+                },
+                order: {
+                  type: 'string',
+                  description: 'Position to add blocks ("first" or "last")',
+                  enum: ['first', 'last'],
+                  default: 'last'
+                }
+              },
+              required: ['page_uid', 'markdown'],
+            },
+          },
         // Search blocks
         {
           name: 'search_blocks',
@@ -333,6 +399,189 @@ class RoamServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         switch (request.params.name) {
+          case 'read_page_by_title': {
+            const { title } = request.params.arguments as { title: string };
+            
+            if (!title) {
+              throw new McpError(
+                ErrorCode.InvalidRequest,
+                'title is required'
+              );
+            }
+
+            // First verify we can find the page
+            console.log('Finding page...');
+            const searchQuery = `[:find ?uid .
+                             :where [?e :node/title "${title}"]
+                                    [?e :block/uid ?uid]]`;
+            const uid = await q(this.graph, searchQuery, []);
+            console.log('Page UID:', uid);
+
+            if (!uid) {
+              throw new McpError(
+                ErrorCode.InvalidRequest,
+                `Page with title "${title}" not found`
+              );
+            }
+
+            // Helper function to collect all referenced block UIDs from text
+            const collectRefs = (text: string, depth: number = 0, refs: Set<string> = new Set()): Set<string> => {
+              if (depth >= 4) return refs; // Max recursion depth
+              
+              const refRegex = /\(\(([a-zA-Z0-9_-]+)\)\)/g;
+              let match;
+              
+              while ((match = refRegex.exec(text)) !== null) {
+                const [_, uid] = match;
+                refs.add(uid);
+              }
+              
+              return refs;
+            };
+
+            // Helper function to resolve block references
+            const resolveRefs = async (text: string, depth: number = 0): Promise<string> => {
+              if (depth >= 4) return text; // Max recursion depth
+              
+              const refs = collectRefs(text, depth);
+              if (refs.size === 0) return text;
+
+              // Get referenced block contents
+              const refQuery = `[:find ?uid ?string
+                               :in $ [?uid ...]
+                               :where [?b :block/uid ?uid]
+                                     [?b :block/string ?string]]`;
+              const refResults = await q(this.graph, refQuery, [Array.from(refs)]) as [string, string][];
+              
+              // Create lookup map of uid -> string
+              const refMap = new Map<string, string>();
+              refResults.forEach(([uid, string]) => {
+                refMap.set(uid, string);
+              });
+              
+              // Replace references with their content
+              let resolvedText = text;
+              for (const uid of refs) {
+                const refContent = refMap.get(uid);
+                if (refContent) {
+                  // Recursively resolve nested references
+                  const resolvedContent = await resolveRefs(refContent, depth + 1);
+                  resolvedText = resolvedText.replace(
+                    new RegExp(`\\(\\(${uid}\\)\\)`, 'g'),
+                    resolvedContent
+                  );
+                }
+              }
+              
+              return resolvedText;
+            };
+
+            // Get all blocks under this page with their order and parent relationships
+            console.log('\nGetting blocks...');
+            const blocksQuery = `[:find ?block-uid ?block-str ?order ?parent-uid
+                               :where [?p :block/uid "${uid}"]
+                                      [?b :block/page ?p]
+                                      [?b :block/uid ?block-uid]
+                                      [?b :block/string ?block-str]
+                                      [?b :block/order ?order]
+                                      [?b :block/parents ?parent]
+                                      [?parent :block/uid ?parent-uid]]`;
+            const blocks = await q(this.graph, blocksQuery, []);
+            console.log('Found', blocks.length, 'blocks');
+            
+            // Create a map of all blocks and resolve references
+            const blockMap = new Map<string, RoamBlock>();
+            for (const [uid, string, order] of blocks) {
+              if (!blockMap.has(uid)) {
+                const resolvedString = await resolveRefs(string);
+                blockMap.set(uid, {
+                  uid,
+                  string: resolvedString,
+                  order: order as number,
+                  children: []
+                });
+              }
+            }
+            console.log('Created block map with', blockMap.size, 'entries');
+
+            // Build parent-child relationships
+            let relationshipsBuilt = 0;
+            blocks.forEach(([childUid, _, __, parentUid]) => {
+              const child = blockMap.get(childUid);
+              const parent = blockMap.get(parentUid);
+              if (child && parent && !parent.children.includes(child)) {
+                parent.children.push(child);
+                relationshipsBuilt++;
+              }
+            });
+            console.log('Built', relationshipsBuilt, 'parent-child relationships');
+
+            // Get top-level blocks (those directly under the page)
+            console.log('\nGetting top-level blocks...');
+            const topQuery = `[:find ?block-uid ?block-str ?order
+                            :where [?p :block/uid "${uid}"]
+                                   [?b :block/page ?p]
+                                   [?b :block/uid ?block-uid]
+                                   [?b :block/string ?block-str]
+                                   [?b :block/order ?order]
+                                   (not-join [?b]
+                                     [?b :block/parents ?parent]
+                                     [?parent :block/page ?p])]`;
+            const topBlocks = await q(this.graph, topQuery, []);
+            console.log('Found', topBlocks.length, 'top-level blocks');
+
+            // Create root blocks
+            const rootBlocks = topBlocks
+              .map(([uid, string, order]) => ({
+                uid,
+                string,
+                order: order as number,
+                children: blockMap.get(uid)?.children || []
+              }))
+              .sort((a, b) => a.order - b.order);
+
+            // Convert to markdown
+            const toMarkdown = (blocks: RoamBlock[], level: number = 0): string => {
+              return blocks.map(block => {
+                const indent = '  '.repeat(level);
+                let md = `${indent}- ${block.string}\n`;
+                if (block.children.length > 0) {
+                  md += toMarkdown(block.children.sort((a, b) => a.order - b.order), level + 1);
+                }
+                return md;
+              }).join('');
+            };
+
+            const markdown = `# ${title}\n\n${toMarkdown(rootBlocks)}`;
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: markdown,
+                },
+              ],
+            };
+          }
+          case 'search_page_titles': {
+            const { search_string } = request.params.arguments as { search_string: string };
+            const query = `[:find ?page-title ?uid
+                          :in $ ?search-string
+                          :where [?e :node/title ?page-title]
+                                [?e :block/uid ?uid]
+                                [(clojure.string/includes? ?page-title ?search-string)]]`;
+            const results = await q(this.graph, query, [search_string]);
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(results, null, 2),
+                },
+              ],
+            };
+          }
+
           case 'search_blocks': {
             const { search_string } = request.params.arguments as { search_string: string };
             const query = `[:find ?block-uid ?block-str 
@@ -359,9 +608,10 @@ class RoamServer {
             
             // First try to find if the page exists
             const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
-            const findResults = await q(this.graph, findQuery, [pageTitle]);
+            type FindResult = [string];
+            const findResults = await q(this.graph, findQuery, [pageTitle]) as FindResult[];
             
-            let pageUid;
+            let pageUid: string | undefined;
             
             if (findResults && findResults.length > 0) {
               // Page exists, use its UID
@@ -380,7 +630,7 @@ class RoamServer {
               }
 
               // Get the new page's UID
-              const results = await q(this.graph, findQuery, [pageTitle]);
+              const results = await q(this.graph, findQuery, [pageTitle]) as FindResult[];
               if (!results || results.length === 0) {
                 throw new Error('Could not find created page');
               }
@@ -571,56 +821,43 @@ class RoamServer {
             };
           }
 
-          case 'batch_actions': {
-            const { actions } = request.params.arguments as { 
-              actions: Array<{
-                type: string;
-                data: any;
-              }>;
+          case 'import_nested_markdown': {
+            const { page_uid, markdown, order = 'last' } = request.params.arguments as {
+              page_uid: string;
+              markdown: string;
+              order?: 'first' | 'last';
             };
 
-            const formattedActions = actions.map(action => {
-              switch (action.type) {
-                case 'create-page':
-                  return {
-                    action: 'create-page',
-                    page: action.data,
-                  };
-                case 'create-block':
-                  return {
-                    action: 'create-block',
-                    location: action.data.location,
-                    block: action.data.block,
-                  };
-                case 'update-block':
-                  return {
-                    action: 'update-block',
-                    block: action.data,
-                  };
-                case 'delete-block':
-                  return {
-                    action: 'delete-block',
-                    block: action.data,
-                  };
-                case 'delete-page':
-                  return {
-                    action: 'delete-page',
-                    page: action.data,
-                  };
-                case 'move-block':
-                  return {
-                    action: 'move-block',
-                    location: action.data.location,
-                    block: action.data.block,
-                  };
-                default:
-                  throw new Error(`Unknown action type: ${action.type}`);
-              }
-            });
+            // Parse markdown into hierarchical structure
+            const nodes = parseMarkdown(markdown);
 
+            // Convert markdown nodes to batch actions
+            const actions = convertToRoamActions(nodes, page_uid, order);
+
+            // Execute batch actions
             const result = await batchActions(this.graph, {
               action: 'batch-actions',
-              actions: formattedActions,
+              actions
+            });
+
+            // Extract created block UIDs
+            const createdUids = result.created_uids || [];
+
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({ success: true, created_uids: createdUids }, null, 2),
+                },
+              ],
+            };
+          }
+
+          case 'batch_actions': {
+            const { actions } = request.params.arguments as { actions: BatchAction[] };
+            const result = await batchActions(this.graph, {
+              action: 'batch-actions',
+              actions
             });
 
             return {

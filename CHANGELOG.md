@@ -5,6 +5,46 @@ All notable changes to the Roam Research MCP server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2024-03-14
+
+### Changed
+
+- Replaced `read_page` with `read_page_by_title` tool:
+  - Finds pages by title first to get UID
+  - Maintains all previous functionality including:
+    - Retrieves all blocks with hierarchical structure
+    - Recursively resolves block references up to 4 levels deep
+    - Converts content to markdown format preserving nesting
+  - Improves usability by allowing page lookup by title instead of requiring UID
+
+## [0.4.0] - 2024-12-19
+
+### Added
+
+- New `read_page` tool for reading and resolving page content:
+  - Retrieves all blocks from a page with their hierarchical structure
+  - Recursively resolves block references (((uid))) up to 4 levels deep
+  - Converts the content to markdown format preserving nesting
+  - Uses indentation to represent block hierarchy
+  - Returns a single markdown document with all references resolved
+
+## [0.3.0] - 2024-03-14
+
+### Added
+
+- New `import_nested_markdown` tool for importing nested markdown content:
+  - Supports headings (# to ######)
+  - Supports bullet points (\* + -)
+  - Supports numbered lists
+  - Supports arbitrary nesting via indentation
+  - Uses batch actions for efficient creation
+  - Preserves hierarchical structure in Roam
+  - Implements pre-generated UIDs for immediate block access:
+    - Uses 9-character format matching Roam's convention
+    - Generates using alphanumeric plus special chars (-, \_)
+    - Enables direct block referencing during creation
+    - Allows efficient parent-child relationship management
+
 ## [0.2.0] - 2024-03-14
 
 ### Changed

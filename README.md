@@ -25,7 +25,7 @@ npm run build
 
 ## Features
 
-The server provides ten powerful tools for interacting with Roam Research:
+The server provides eleven powerful tools for interacting with Roam Research:
 
 1. `search_blocks`: Search for blocks containing specific text
 2. `create_page`: Create new pages with optional content
@@ -37,6 +37,7 @@ The server provides ten powerful tools for interacting with Roam Research:
 8. `delete_block`: Delete blocks
 9. `delete_page`: Delete pages
 10. `batch_actions`: Perform multiple operations at once
+11. `read_page_by_title`: Read a page's content by title with recursive block reference resolution
 
 ## Setup
 
@@ -114,6 +115,22 @@ use_mcp_tool roam-research search_blocks {
   "search_string": "example text"
 }
 ```
+
+### Read Page By Title
+
+Read a page's content with resolved block references:
+
+```typescript
+use_mcp_tool roam-research read_page_by_title {
+  "title": "Example Page"
+}
+```
+
+Returns the page content as markdown with:
+
+- All blocks in hierarchical structure
+- Block references recursively resolved (up to 4 levels)
+- Proper indentation for nesting levels
 
 ### Create Page
 

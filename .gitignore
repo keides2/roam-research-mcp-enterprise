@@ -3,3 +3,5 @@ build/
 *.log
 .env*
 typescript/*
+src/test-queries.ts
+test-*
