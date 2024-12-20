@@ -5,6 +5,32 @@ All notable changes to the Roam Research MCP server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2024-12-19
+
+### Changed
+
+- Enhanced `import_nested_markdown` tool:
+  - Improved handling of markdown content with heading as parent block
+  - Fixed nesting logic to properly maintain hierarchical structure
+  - Added support for mixed list types (bullets and numbers) at any nesting level
+  - Better indentation handling (2 spaces per level)
+  - Preserves Roam-specific syntax ([[Page References]], #[[Page Tags]])
+  - Maintains text formatting (**bold**, _italic_)
+  - Added comprehensive test file (test-addMarkdownText.ts) for validation
+
+## [0.6.0] - 2024-03-14
+
+### Changed
+
+- Reduced exposed tools to core functionality:
+  - Kept only read_page_by_title, create_page, and create_block
+  - Simplified API surface for better maintainability
+- Enhanced create_block tool:
+  - Made page_uid parameter optional
+  - Defaults to today's daily page when no page_uid provided
+  - Automatically creates daily page if it doesn't exist
+  - Uses US date format (e.g., "March 14, 2024")
+
 ## [0.5.0] - 2024-03-14
 
 ### Changed

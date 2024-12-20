@@ -25,24 +25,58 @@ export function parseMarkdown(markdown: string): MarkdownNode[] {
   const lines = markdown.split('\n');
   const root: MarkdownNode[] = [];
   const stack: MarkdownNode[] = [];
+  let lastNode: MarkdownNode | null = null;
   
+  // Process first line separately if it's a heading
+  const firstLine = lines[0]?.trim();
+  if (firstLine && firstLine.startsWith('#')) {
+    const headingNode = parseLine(firstLine);
+    root.push(headingNode);
+    lastNode = headingNode;
+    lines.shift(); // Remove first line from processing
+  }
+  
+  // Process remaining lines
   for (const line of lines) {
     if (!line.trim()) continue;
     
     const node = parseLine(line);
     
-    // Find the appropriate parent for this node based on level
-    while (stack.length > 0 && stack[stack.length - 1].level >= node.level) {
-      stack.pop();
+    if (lastNode === null) {
+      root.push(node);
+      lastNode = node;
+      continue;
     }
     
-    if (stack.length === 0) {
-      root.push(node);
-    } else {
-      stack[stack.length - 1].children.push(node);
+    // If this is a child of the last node
+    if (node.level > lastNode.level) {
+      lastNode.children.push(node);
+    }
+    // If this is a sibling or belongs to a parent
+    else {
+      // Find the appropriate parent
+      let parent: MarkdownNode | undefined = lastNode;
+      while (parent && parent.level >= node.level) {
+        const idx = stack.lastIndexOf(parent);
+        if (idx > 0) {
+          parent = stack[idx - 1];
+        } else {
+          parent = undefined;
+        }
+      }
+      
+      if (parent) {
+        parent.children.push(node);
+      } else if (root.length === 1 && root[0].content) {
+        // If we have a heading as root, nest under it
+        root[0].children.push(node);
+      } else {
+        root.push(node);
+      }
     }
     
     stack.push(node);
+    lastNode = node;
   }
   
   return root;
@@ -60,20 +94,17 @@ function parseLine(line: string): MarkdownNode {
       content = match[2];
     }
   }
+  // Calculate indentation level (2 spaces = 1 level)
+  const indentation = line.match(/^\s*/)?.[0].length ?? 0;
+  level = Math.floor(indentation / 2);
+
   // Handle list items
-  else if (content.match(/^[*+-]\s/)) {
-    level = line.match(/^\s*/)?.[0].length ?? 0;
+  if (content.match(/^[*+-]\s/)) {
     content = content.replace(/^[*+-]\s+/, '');
   }
   // Handle numbered lists
   else if (content.match(/^\d+\.\s/)) {
-    level = line.match(/^\s*/)?.[0].length ?? 0;
     content = content.replace(/^\d+\.\s+/, '');
-  }
-  // Handle indented lines
-  else {
-    level = line.match(/^\s*/)?.[0].length ?? 0;
-    content = content.trim();
   }
   
   return {
