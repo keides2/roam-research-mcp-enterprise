@@ -5,6 +5,18 @@ All notable changes to the Roam Research MCP server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2024-03-14
+
+### Changed
+
+- Enhanced `fetch_page_by_title` tool with case-insensitive search:
+  - Tries three variations of the title when searching:
+    1. Original title as provided
+    2. Title with each word capitalized
+    3. Title with all words lowercase
+  - Returns first matching page found
+  - Improves page discovery reliability
+
 ## [0.7.0] - 2024-12-19
 
 ### Changed

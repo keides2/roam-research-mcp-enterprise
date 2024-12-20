@@ -103,12 +103,12 @@ class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.6.0',
+        version: '0.6.1',
       },
       {
           capabilities: {
             tools: {
-              read_page_by_title: {},
+              fetch_page_by_title: {},
               create_page: {},
               create_block: {},
               import_nested_markdown: {}
@@ -132,14 +132,14 @@ class RoamServer {
         tools: [
           // Read page
           {
-            name: 'read_page_by_title',
-            description: 'Read a page\'s content by title and recursively resolve block references',
+            name: 'fetch_page_by_title',
+            description: 'Fetch the contents of a page by title and recursively resolve any block references',
             inputSchema: {
               type: 'object',
               properties: {
                 title: {
                   type: 'string',
-                  description: 'Title of the page to read',
+                  description: 'Title of the page to fetch and read',
                 },
               },
               required: ['title'],
@@ -214,7 +214,7 @@ class RoamServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         switch (request.params.name) {
-          case 'read_page_by_title': {
+          case 'fetch_page_by_title': {
             const { title } = request.params.arguments as { title: string };
             
             if (!title) {
@@ -224,18 +224,38 @@ class RoamServer {
               );
             }
 
-            // First verify we can find the page
+            // Try to find the page with different case variations
             console.log('Finding page...');
-            const searchQuery = `[:find ?uid .
-                             :where [?e :node/title "${title}"]
-                                    [?e :block/uid ?uid]]`;
-            const uid = await q(this.graph, searchQuery, []);
-            console.log('Page UID:', uid);
+            
+            // Helper function to capitalize each word
+            const capitalizeWords = (str: string) => {
+              return str.split(' ').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+              ).join(' ');
+            };
+
+            // Try different case variations
+            const variations = [
+              title, // Original
+              capitalizeWords(title), // Each word capitalized
+              title.toLowerCase() // All lowercase
+            ];
+
+            let uid: string | null = null;
+            for (const variation of variations) {
+              const searchQuery = `[:find ?uid .
+                               :where [?e :node/title "${variation}"]
+                                      [?e :block/uid ?uid]]`;
+              const result = await q(this.graph, searchQuery, []);
+              uid = (result === null || result === undefined) ? null : String(result);
+              console.log(`Trying "${variation}" - UID:`, uid);
+              if (uid) break;
+            }
 
             if (!uid) {
               throw new McpError(
                 ErrorCode.InvalidRequest,
-                `Page with title "${title}" not found`
+                `Page with title "${title}" not found (tried original, capitalized words, and lowercase)`
               );
             }
 
@@ -304,81 +324,91 @@ class RoamServer {
             const blocks = await q(this.graph, blocksQuery, []);
             console.log('Found', blocks.length, 'blocks');
             
-            // Create a map of all blocks and resolve references
-            const blockMap = new Map<string, RoamBlock>();
-            for (const [uid, string, order] of blocks) {
-              if (!blockMap.has(uid)) {
-                const resolvedString = await resolveRefs(string);
-                blockMap.set(uid, {
-                  uid,
-                  string: resolvedString,
-                  order: order as number,
-                  children: []
-                });
-              }
-            }
-            console.log('Created block map with', blockMap.size, 'entries');
-
-            // Build parent-child relationships
-            let relationshipsBuilt = 0;
-            blocks.forEach(([childUid, _, __, parentUid]) => {
-              const child = blockMap.get(childUid);
-              const parent = blockMap.get(parentUid);
-              if (child && parent && !parent.children.includes(child)) {
-                parent.children.push(child);
-                relationshipsBuilt++;
-              }
-            });
-            console.log('Built', relationshipsBuilt, 'parent-child relationships');
-
-            // Get top-level blocks (those directly under the page)
-            console.log('\nGetting top-level blocks...');
-            const topQuery = `[:find ?block-uid ?block-str ?order
-                            :where [?p :block/uid "${uid}"]
-                                   [?b :block/page ?p]
-                                   [?b :block/uid ?block-uid]
-                                   [?b :block/string ?block-str]
-                                   [?b :block/order ?order]
-                                   (not-join [?b]
-                                     [?b :block/parents ?parent]
-                                     [?parent :block/page ?p])]`;
-            const topBlocks = await q(this.graph, topQuery, []);
-            console.log('Found', topBlocks.length, 'top-level blocks');
-
-            // Create root blocks
-            const rootBlocks = topBlocks
-              .map(([uid, string, order]) => ({
-                uid,
-                string,
-                order: order as number,
-                children: blockMap.get(uid)?.children || []
-              }))
-              .sort((a, b) => a.order - b.order);
-
-            // Convert to markdown
-            const toMarkdown = (blocks: RoamBlock[], level: number = 0): string => {
-              return blocks.map(block => {
-                const indent = '  '.repeat(level);
-                let md = `${indent}- ${block.string}\n`;
-                if (block.children.length > 0) {
-                  md += toMarkdown(block.children.sort((a, b) => a.order - b.order), level + 1);
+            if (blocks.length > 0) {
+                const blockMap = new Map<string, RoamBlock>();
+                for (const [uid, string, order] of blocks) {
+                  if (!blockMap.has(uid)) {
+                    const resolvedString = await resolveRefs(string);
+                    blockMap.set(uid, {
+                      uid,
+                      string: resolvedString,
+                      order: order as number,
+                      children: []
+                    });
+                  }
                 }
-                return md;
-              }).join('');
-            };
+                console.log('Created block map with', blockMap.size, 'entries');
+                // Create a map of all blocks and resolve references
 
-            const markdown = `# ${title}\n\n${toMarkdown(rootBlocks)}`;
-            
-            return {
-              content: [
+                // Build parent-child relationships
+                let relationshipsBuilt = 0;
+                blocks.forEach(([childUid, _, __, parentUid]) => {
+                  const child = blockMap.get(childUid);
+                  const parent = blockMap.get(parentUid);
+                  if (child && parent && !parent.children.includes(child)) {
+                    parent.children.push(child);
+                    relationshipsBuilt++;
+                  }
+                });
+                console.log('Built', relationshipsBuilt, 'parent-child relationships');
+
+                // Get top-level blocks (those directly under the page)
+                console.log('\nGetting top-level blocks...');
+                const topQuery = `[:find ?block-uid ?block-str ?order
+                                :where [?p :block/uid "${uid}"]
+                                      [?b :block/page ?p]
+                                      [?b :block/uid ?block-uid]
+                                      [?b :block/string ?block-str]
+                                      [?b :block/order ?order]
+                                      (not-join [?b]
+                                        [?b :block/parents ?parent]
+                                        [?parent :block/page ?p])]`;
+                const topBlocks = await q(this.graph, topQuery, []);
+                console.log('Found', topBlocks.length, 'top-level blocks');
+
+                // Create root blocks
+                const rootBlocks = topBlocks
+                  .map(([uid, string, order]) => ({
+                    uid,
+                    string,
+                    order: order as number,
+                    children: blockMap.get(uid)?.children || []
+                  }))
+                  .sort((a, b) => a.order - b.order);
+
+                // Convert to markdown
+                const toMarkdown = (blocks: RoamBlock[], level: number = 0): string => {
+                  return blocks.map(block => {
+                    const indent = '  '.repeat(level);
+                    let md = `${indent}- ${block.string}\n`;
+                    if (block.children.length > 0) {
+                      md += toMarkdown(block.children.sort((a, b) => a.order - b.order), level + 1);
+                    }
+                    return md;
+                  }).join('');
+                };
+
+                const markdown = `# ${title}\n\n${toMarkdown(rootBlocks)}`;
+
+                return {
+                content: [
+                  {
+                    type: 'text',
+                    text: markdown,
+                  },
+                ],
+              };
+            } else {
+              return { content: [
                 {
                   type: 'text',
-                  text: markdown,
-                },
-              ],
-            };
+                  text: `${title} (no content found)`
+                }
+              ]}
+            }
           }
-          case 'search_page_titles': {
+
+          case 'search_for_page_title': {
             const { search_string } = request.params.arguments as { search_string: string };
             const query = `[:find ?page-title ?uid
                           :in $ ?search-string
