@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - delete_page
   - batch_actions
 
-## [0.5.0] - 2024-03-14
+## [0.5.0] - 2024-12-20
 
 ### Changed
 
@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Converts content to markdown format preserving nesting
   - Improves usability by allowing page lookup by title instead of requiring UID
 
-## [0.4.0] - 2024-12-19
+## [0.4.0] - 2024-12-20
 
 ### Added
 
@@ -66,7 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses indentation to represent block hierarchy
   - Returns a single markdown document with all references resolved
 
-## [0.3.0] - 2024-03-14
+## [0.3.0] - 2024-12-19
 
 ### Added
 
@@ -83,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Enables direct block referencing during creation
     - Allows efficient parent-child relationship management
 
-## [0.2.0] - 2024-03-14
+## [0.2.0] - 2024-12-19
 
 ### Changed
 
