@@ -103,7 +103,7 @@ class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.6.1',
+        version: '0.7.0',
       },
       {
           capabilities: {
@@ -148,7 +148,7 @@ class RoamServer {
           // Create page
           {
             name: 'create_page',
-            description: 'Create a new page in Roam',
+            description: 'Create a new page in Roam by title',
             inputSchema: {
               type: 'object',
               properties: {
@@ -167,7 +167,7 @@ class RoamServer {
           // Create block
           {
             name: 'create_block',
-            description: 'Create a new block in a page (defaults to today\'s daily page)',
+            description: 'Create a new block on a page by title, defaulting to today\'s daily page if none provided.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -177,7 +177,11 @@ class RoamServer {
                 },
                 page_uid: {
                   type: 'string',
-                  description: 'Optional: UID of the page to add block to (defaults to today\'s page)',
+                  description: 'Optional: UID of the page to add block to',
+                },
+                title: {
+                  type: 'string',
+                  description: 'Optional: Title of the page to add block to (defaults to today\'s date if neither page_uid nor title provided)',
                 },
               },
               required: ['content'],
@@ -186,7 +190,7 @@ class RoamServer {
           // Import nested markdown
           {
             name: 'import_nested_markdown',
-            description: 'Import nested markdown content into Roam as blocks',
+            description: 'Import nested markdown content into Roam as blocks on given page with title (defaults to today\'s page if none provided)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -509,10 +513,43 @@ class RoamServer {
           }
 
           case 'create_block': {
-            const { content, page_uid } = request.params.arguments as { content: string; page_uid?: string };
+            const { content, page_uid, title } = request.params.arguments as { 
+              content: string; 
+              page_uid?: string;
+              title?: string;
+            };
             
-            // If no page_uid provided, use today's date page
+            // If page_uid provided, use it directly
             let targetPageUid = page_uid;
+            
+            // If no page_uid but title provided, search for page by title
+            if (!targetPageUid && title) {
+              const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
+              const findResults = await q(this.graph, findQuery, [title]) as [string][];
+              
+              if (findResults && findResults.length > 0) {
+                targetPageUid = findResults[0][0];
+              } else {
+                // Create page with provided title if it doesn't exist
+                const success = await createPage(this.graph, {
+                  action: 'create-page',
+                  page: { title }
+                });
+
+                if (!success) {
+                  throw new Error('Failed to create page with provided title');
+                }
+
+                // Get the new page's UID
+                const results = await q(this.graph, findQuery, [title]) as [string][];
+                if (!results || results.length === 0) {
+                  throw new Error('Could not find created page');
+                }
+                targetPageUid = results[0][0];
+              }
+            }
+            
+            // If neither page_uid nor title provided, use today's date page
             if (!targetPageUid) {
               const today = new Date();
               const dateStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });

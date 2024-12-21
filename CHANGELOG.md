@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.7.0] - 2024-12-21
+
+### Added
+
+- Enhanced `create_block` tool with page title support:
+  - Added optional `title` parameter as an alternative to `page_uid`
+  - Automatically finds or creates page by title when specified
+  - Maintains backward compatibility with `page_uid` parameter
+  - Preserves default behavior of using today's date when neither specified
+
 All notable changes to the Roam Research MCP server will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
