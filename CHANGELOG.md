@@ -5,43 +5,43 @@ All notable changes to the Roam Research MCP server will be documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1] - 2024-03-14
+## [0.6.1] - 2024-12-21
 
 ### Changed
 
-- Enhanced `fetch_page_by_title` tool with case-insensitive search:
-  - Tries three variations of the title when searching:
-    1. Original title as provided
-    2. Title with each word capitalized
-    3. Title with all words lowercase
+- Streamlined tool set to four core functionalities:
+  - fetch_page_by_title: Fetch and read page content with recursive reference resolution
+  - create_page: Create new pages with optional content
+  - create_block: Create blocks with automatic daily page support
+  - import_nested_markdown: Import structured markdown content
+- Significantly improved documentation:
+  - Reorganized README to reflect current tools
+  - Enhanced usage examples with return value descriptions
+  - Added detailed markdown import examples
+  - Improved error handling documentation
+  - Updated development guidelines
+
+### Added
+
+- Case-insensitive page title matching for fetch_page_by_title:
+  - Tries original title, capitalized words, and lowercase variations
   - Returns first matching page found
-  - Improves page discovery reliability
+- Enhanced daily page integration:
+  - Automatic creation of daily pages when needed
+  - Default target for blocks when no page specified
+  - Uses US date format (e.g., "December 21, 2024")
 
-## [0.7.0] - 2024-12-19
+### Removed
 
-### Changed
-
-- Enhanced `import_nested_markdown` tool:
-  - Improved handling of markdown content with heading as parent block
-  - Fixed nesting logic to properly maintain hierarchical structure
-  - Added support for mixed list types (bullets and numbers) at any nesting level
-  - Better indentation handling (2 spaces per level)
-  - Preserves Roam-specific syntax ([[Page References]], #[[Page Tags]])
-  - Maintains text formatting (**bold**, _italic_)
-  - Added comprehensive test file (test-addMarkdownText.ts) for validation
-
-## [0.6.0] - 2024-03-14
-
-### Changed
-
-- Reduced exposed tools to core functionality:
-  - Kept only read_page_by_title, create_page, and create_block
-  - Simplified API surface for better maintainability
-- Enhanced create_block tool:
-  - Made page_uid parameter optional
-  - Defaults to today's daily page when no page_uid provided
-  - Automatically creates daily page if it doesn't exist
-  - Uses US date format (e.g., "March 14, 2024")
+- Deprecated tools to focus on core functionality:
+  - search_blocks
+  - pull_data
+  - pull_many_data
+  - move_block
+  - update_block
+  - delete_block
+  - delete_page
+  - batch_actions
 
 ## [0.5.0] - 2024-03-14
 

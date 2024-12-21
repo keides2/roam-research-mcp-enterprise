@@ -25,19 +25,12 @@ npm run build
 
 ## Features
 
-The server provides eleven powerful tools for interacting with Roam Research:
+The server provides four powerful tools for interacting with Roam Research:
 
-1. `search_blocks`: Search for blocks containing specific text
+1. `fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `create_page`: Create new pages with optional content
-3. `create_block`: Create new blocks in existing pages
-4. `pull_data`: Get data for specific blocks/pages
-5. `pull_many_data`: Get data for multiple blocks/pages
-6. `move_block`: Move blocks to new locations
-7. `update_block`: Update block content and properties
-8. `delete_block`: Delete blocks
-9. `delete_page`: Delete pages
-10. `batch_actions`: Perform multiple operations at once
-11. `read_page_by_title`: Read a page's content by title with recursive block reference resolution
+3. `create_block`: Create new blocks in a page (defaults to today's daily page)
+4. `import_nested_markdown`: Import nested markdown content into Roam as blocks
 
 ## Setup
 
@@ -106,31 +99,22 @@ The server provides eleven powerful tools for interacting with Roam Research:
 
 ## Usage
 
-### Search Blocks
+### Fetch Page By Title
 
-Search for blocks containing specific text:
-
-```typescript
-use_mcp_tool roam-research search_blocks {
-  "search_string": "example text"
-}
-```
-
-### Read Page By Title
-
-Read a page's content with resolved block references:
+Fetch and read a page's content with resolved block references:
 
 ```typescript
-use_mcp_tool roam-research read_page_by_title {
+use_mcp_tool roam-research fetch_page_by_title {
   "title": "Example Page"
 }
 ```
 
 Returns the page content as markdown with:
 
-- All blocks in hierarchical structure
-- Block references recursively resolved (up to 4 levels)
+- Complete hierarchical structure
+- Block references recursively resolved (up to 4 levels deep)
 - Proper indentation for nesting levels
+- Full markdown formatting
 
 ### Create Page
 
@@ -143,144 +127,84 @@ use_mcp_tool roam-research create_page {
 }
 ```
 
+Returns the created page's UID on success.
+
 ### Create Block
 
-Add a new block to an existing page:
+Add a new block to a page (defaults to today's daily page if no page_uid provided):
 
 ```typescript
 use_mcp_tool roam-research create_block {
-  "page_uid": "target-page-uid",
-  "content": "Block content"
+  "content": "Block content",
+  "page_uid": "optional-target-page-uid"
 }
 ```
 
-### Pull Data
+If no page_uid is provided, the block will be added to today's daily page.
 
-Get data for a specific block or page:
+### Import Nested Markdown
 
-```typescript
-use_mcp_tool roam-research pull_data {
-  "pattern": "[*]",
-  "uid": "block-or-page-uid"
-}
-```
-
-### Pull Many Data
-
-Get data for multiple blocks or pages:
+Import nested markdown content into Roam as blocks:
 
 ```typescript
-use_mcp_tool roam-research pull_many_data {
-  "pattern": "[*]",
-  "uids": "uid1,uid2,uid3"
-}
-```
-
-### Move Block
-
-Move a block to a new location:
-
-```typescript
-use_mcp_tool roam-research move_block {
-  "block_uid": "block-to-move",
-  "parent_uid": "new-parent",
+use_mcp_tool roam-research import_nested_markdown {
+  "title": "Optional page title (defaults to today's date)",
+  "markdown": "# Heading\n- Item 1\n  - Subitem A\n  - Subitem B\n- Item 2",
   "order": "last"
 }
 ```
 
-### Update Block
+Features:
 
-Update block content and properties:
-
-```typescript
-use_mcp_tool roam-research update_block {
-  "uid": "block-uid",
-  "content": "New content",
-  "open": true,
-  "heading": 1
-}
-```
-
-### Delete Block
-
-Delete a block:
-
-```typescript
-use_mcp_tool roam-research delete_block {
-  "uid": "block-to-delete"
-}
-```
-
-### Delete Page
-
-Delete a page:
-
-```typescript
-use_mcp_tool roam-research delete_page {
-  "uid": "page-to-delete"
-}
-```
-
-### Batch Actions
-
-Perform multiple operations at once:
-
-```typescript
-use_mcp_tool roam-research batch_actions {
-  "actions": [
-    {
-      "type": "create-page",
-      "data": {
-        "title": "New Page"
-      }
-    },
-    {
-      "type": "create-block",
-      "data": {
-        "location": {
-          "parent-uid": "page-uid",
-          "order": "last"
-        },
-        "block": {
-          "string": "Block content"
-        }
-      }
-    }
-  ]
-}
-```
+- Supports headings (# to ######)
+- Supports bullet points (\* + -)
+- Supports numbered lists
+- Preserves hierarchical structure
+- Creates page if it doesn't exist
+- Returns created block UIDs
 
 ## Error Handling
 
-The server provides comprehensive error handling:
+The server provides comprehensive error handling for common scenarios:
 
-- Invalid API token or insufficient privileges
-- Rate limiting (too many requests)
-- Graph not ready for requests
-- Invalid parameters or missing data
-- Failed operations
+- Configuration errors:
+  - Missing API token or graph name
+  - Invalid environment variables
+- API errors:
+  - Authentication failures
+  - Invalid requests
+  - Failed operations
+- Tool-specific errors:
+  - Page not found (with case-insensitive search)
+  - Invalid markdown format
+  - Missing required parameters
 
 Each error response includes:
 
-- Error code
-- Descriptive message
-- Stack trace (in development)
+- Standard MCP error code
+- Detailed error message
+- Suggestions for resolution when applicable
 
 ## Development
 
 The server is built with TypeScript and includes:
 
-- Full type definitions for the Roam Research API
-- Comprehensive input schemas for all tools
-- Proper handling of API responses
-- Support for batch operations
+- Environment variable handling with .env support
+- Comprehensive input validation
+- Case-insensitive page title matching
+- Recursive block reference resolution
+- Markdown parsing and conversion
+- Daily page integration
+- Detailed debug logging
 
 To modify or extend the server:
 
-1. Update types in `src/types.d.ts`
-2. Modify server implementation in `src/index.ts`
-3. Rebuild using `npm run build`
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Make changes to the source files
+4. Build with `npm run build`
+5. Test locally by configuring environment variables
 
 ## License
 
-ISC License
+MIT License
