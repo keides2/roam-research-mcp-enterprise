@@ -25,12 +25,13 @@ npm run build
 
 ## Features
 
-The server provides four powerful tools for interacting with Roam Research:
+The server provides five powerful tools for interacting with Roam Research:
 
 1. `fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `create_page`: Create new pages with optional content
 3. `create_block`: Create new blocks in a page (defaults to today's daily page)
 4. `import_nested_markdown`: Import nested markdown content into Roam as blocks
+5. `add_todo`: Add multiple todo items to today's daily page with checkbox syntax
 
 ## Setup
 
@@ -146,6 +147,28 @@ You can specify either:
 - `page_uid`: Direct reference to target page
 - `title`: Name of target page (will be created if it doesn't exist)
 - Neither: Block will be added to today's daily page
+
+### Add Todo Items
+
+Add one or more todo items to today's daily page:
+
+```typescript
+use_mcp_tool roam-research add_todo {
+  "todos": [
+    "First todo item",
+    "Second todo item",
+    "Third todo item"
+  ]
+}
+```
+
+Features:
+
+- Adds todos with Roam checkbox syntax (`{{TODO}} todo text`)
+- Supports adding multiple todos in a single operation
+- Uses batch actions for efficiency when adding >10 todos
+- Automatically creates today's page if it doesn't exist
+- Adds todos as top-level blocks in sequential order
 
 ### Import Nested Markdown
 
