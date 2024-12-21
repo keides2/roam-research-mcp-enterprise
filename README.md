@@ -131,16 +131,21 @@ Returns the created page's UID on success.
 
 ### Create Block
 
-Add a new block to a page (defaults to today's daily page if no page_uid provided):
+Add a new block to a page (defaults to today's daily page if neither page_uid nor title provided):
 
 ```typescript
 use_mcp_tool roam-research create_block {
   "content": "Block content",
-  "page_uid": "optional-target-page-uid"
+  "page_uid": "optional-target-page-uid",
+  "title": "optional-target-page-title"
 }
 ```
 
-If no page_uid is provided, the block will be added to today's daily page.
+You can specify either:
+
+- `page_uid`: Direct reference to target page
+- `title`: Name of target page (will be created if it doesn't exist)
+- Neither: Block will be added to today's daily page
 
 ### Import Nested Markdown
 
