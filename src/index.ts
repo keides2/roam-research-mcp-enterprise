@@ -103,7 +103,7 @@ class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.7.0',
+        version: '0.8.0',
       },
       {
           capabilities: {
@@ -148,7 +148,7 @@ class RoamServer {
           // Create page
           {
             name: 'create_page',
-            description: 'Create a new page in Roam by title',
+            description: 'Create a new page in Roam by title and any subpoints will be nested blocks.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -486,19 +486,37 @@ class RoamServer {
               pageUid = results[0][0];
             }
 
-            // If content is provided, create a block in the new page
+            // If content is provided, check if it looks like nested markdown
             if (content) {
-              const blockSuccess = await createBlock(this.graph, {
-                action: 'create-block',
-                location: { 
-                  "parent-uid": pageUid,
-                  "order": "first"
-                },
-                block: { string: content }
-              });
+              // Check if content starts with bullet points (- or *)
+              const isNestedMarkdown = /^[\s]*[-*]/.test(content);
+              
+              if (isNestedMarkdown) {
+                // Use import_nested_markdown functionality
+                const nodes = parseMarkdown(content);
+                const actions = convertToRoamActions(nodes, pageUid, 'first');
+                const result = await batchActions(this.graph, {
+                  action: 'batch-actions',
+                  actions
+                });
+                
+                if (!result) {
+                  throw new Error('Failed to import nested markdown content');
+                }
+              } else {
+                // Create a simple block for non-nested content
+                const blockSuccess = await createBlock(this.graph, {
+                  action: 'create-block',
+                  location: { 
+                    "parent-uid": pageUid,
+                    "order": "first"
+                  },
+                  block: { string: content }
+                });
 
-              if (!blockSuccess) {
-                throw new Error('Failed to create content block');
+                if (!blockSuccess) {
+                  throw new Error('Failed to create content block');
+                }
               }
             }
             

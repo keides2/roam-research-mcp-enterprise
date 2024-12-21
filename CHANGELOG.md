@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.0] - 2024-12-21
+
+### Added
+
+- Enhanced `create_page` tool with nested markdown support:
+  - Automatically detects if content is nested markdown (starts with bullet points)
+  - Uses import_nested_markdown functionality for nested content
+  - Maintains simple block creation for non-nested content
+  - Preserves existing page handling behavior
+
 ## [0.7.0] - 2024-12-21
 
 ### Added
