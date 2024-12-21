@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.12.0] - 2024-12-21
+
+### Changed
+
+- Prefixed all tool names with "roam\_" for better namespacing:
+  - roam_add_todo (previously add_todo)
+  - roam_fetch_page_by_title (previously fetch_page_by_title)
+  - roam_create_page (previously create_page)
+  - roam_create_block (previously create_block)
+  - roam_import_markdown (new tool)
+
+### Added
+
+- New roam_import_markdown tool for precise nested content placement:
+  - Import markdown under specific blocks by UID or exact string match
+  - Locate parent blocks within specific pages by title or UID
+  - Control content placement order (first or last)
+  - Returns created block UIDs for reference
+  - Efficient batch operations for nested content
+
+## [0.11.1] - 2024-12-21
+
+### Fixed
+
+- Standardized date formatting across all tools:
+  - Ensures consistent use of Roam's date format with ordinal suffixes
+  - Updated import_nested_markdown helper to use formatRoamDate
+  - Maintains proper formatting (e.g., "December 21st, 2024")
+  - Aligns with existing date handling in other tools
+
+## [0.11.0] - 2024-12-21
+
+### Changed
+
+- Removed import_nested_markdown from exposed tools:
+  - Functionality remains as internal helper
+  - Still used by create_page for nested markdown content
+  - Maintains existing nested markdown parsing capabilities
+  - Breaking change: Direct tool access no longer available
+
 ## [0.10.0] - 2024-12-21
 
 ### Changed

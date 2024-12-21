@@ -27,11 +27,11 @@ npm run build
 
 The server provides five powerful tools for interacting with Roam Research:
 
-1. `fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
-2. `create_page`: Create new pages with optional content
-3. `create_block`: Create new blocks in a page (defaults to today's daily page)
-4. `import_nested_markdown`: Import nested markdown content into Roam as blocks
-5. `add_todo`: Add multiple todo items to today's daily page with checkbox syntax
+1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
+2. `roam_create_page`: Create new pages with optional content
+3. `roam_create_block`: Create new blocks in a page (defaults to today's daily page)
+4. `roam_import_markdown`: Import nested markdown content under specific blocks
+5. `roam_add_todo`: Add multiple todo items to today's daily page with checkbox syntax
 
 ## Setup
 
@@ -105,7 +105,7 @@ The server provides five powerful tools for interacting with Roam Research:
 Fetch and read a page's content with resolved block references:
 
 ```typescript
-use_mcp_tool roam-research fetch_page_by_title {
+use_mcp_tool roam-research roam_fetch_page_by_title {
   "title": "Example Page"
 }
 ```
@@ -122,7 +122,7 @@ Returns the page content as markdown with:
 Create a new page with optional content:
 
 ```typescript
-use_mcp_tool roam-research create_page {
+use_mcp_tool roam-research roam_create_page {
   "title": "New Page",
   "content": "Initial content for the page"
 }
@@ -135,7 +135,7 @@ Returns the created page's UID on success.
 Add a new block to a page (defaults to today's daily page if neither page_uid nor title provided):
 
 ```typescript
-use_mcp_tool roam-research create_block {
+use_mcp_tool roam-research roam_create_block {
   "content": "Block content",
   "page_uid": "optional-target-page-uid",
   "title": "optional-target-page-title"
@@ -148,12 +148,22 @@ You can specify either:
 - `title`: Name of target page (will be created if it doesn't exist)
 - Neither: Block will be added to today's daily page
 
+Returns:
+
+```json
+{
+  "success": true,
+  "block_uid": "created-block-uid",
+  "parent_uid": "parent-page-uid"
+}
+```
+
 ### Add Todo Items
 
 Add one or more todo items to today's daily page:
 
 ```typescript
-use_mcp_tool roam-research add_todo {
+use_mcp_tool roam-research roam_add_todo {
   "todos": [
     "First todo item",
     "Second todo item",
@@ -172,24 +182,47 @@ Features:
 
 ### Import Nested Markdown
 
-Import nested markdown content into Roam as blocks:
+Import nested markdown content under a specific block:
 
 ```typescript
-use_mcp_tool roam-research import_nested_markdown {
-  "title": "Optional page title (defaults to today's date)",
-  "markdown": "# Heading\n- Item 1\n  - Subitem A\n  - Subitem B\n- Item 2",
-  "order": "last"
+use_mcp_tool roam-research roam_import_markdown {
+  "content": "- Item 1\n  - Subitem A\n  - Subitem B\n- Item 2",
+  "page_uid": "optional-page-uid",
+  "page_title": "optional-page-title",
+  "parent_uid": "optional-parent-block-uid",
+  "parent_string": "optional-exact-block-content",
+  "order": "first"
 }
 ```
 
 Features:
 
-- Supports headings (# to ######)
-- Supports bullet points (\* + -)
-- Supports numbered lists
-- Preserves hierarchical structure
-- Creates page if it doesn't exist
-- Returns created block UIDs
+- Import content under specific blocks:
+  - Find parent block by UID or exact string match
+  - Locate blocks within specific pages by title or UID
+  - Defaults to today's page if no page specified
+- Control content placement:
+  - Add as first or last child of parent block
+  - Preserve hierarchical structure
+  - Efficient batch operations for nested content
+- Comprehensive return value:
+  ```json
+  {
+    "success": true,
+    "page_uid": "target-page-uid",
+    "parent_uid": "parent-block-uid",
+    "created_uids": ["uid1", "uid2", ...]
+  }
+  ```
+
+Parameters:
+
+- `content`: Nested markdown content to import
+- `page_uid`: UID of the page containing the parent block
+- `page_title`: Title of the page containing the parent block (ignored if page_uid provided)
+- `parent_uid`: UID of the parent block to add content under
+- `parent_string`: Exact string content of the parent block (must provide either page_uid or page_title)
+- `order`: Where to add the content ("first" or "last", defaults to "first")
 
 ## Error Handling
 
@@ -204,6 +237,7 @@ The server provides comprehensive error handling for common scenarios:
   - Failed operations
 - Tool-specific errors:
   - Page not found (with case-insensitive search)
+  - Block not found by string match
   - Invalid markdown format
   - Missing required parameters
 
@@ -224,6 +258,7 @@ The server is built with TypeScript and includes:
 - Markdown parsing and conversion
 - Daily page integration
 - Detailed debug logging
+- Efficient batch operations
 
 To modify or extend the server:
 

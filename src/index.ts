@@ -121,16 +121,16 @@ class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.10.0',
+        version: '0.12.0',
       },
       {
           capabilities: {
             tools: {
-              add_todo: {},
-              fetch_page_by_title: {},
-              create_page: {},
-              create_block: {},
-              import_nested_markdown: {}
+              roam_add_todo: {},
+              roam_fetch_page_by_title: {},
+              roam_create_page: {},
+              roam_create_block: {},
+              roam_import_markdown: {}
             },
           },
         }
@@ -151,8 +151,8 @@ class RoamServer {
             tools: [
               // Add todo
               {
-                name: 'add_todo',
-                description: 'Add todo items as blocks on today\'s daily page',
+                name: 'roam_add_todo',
+                description: 'Add a list of todo items as individual blocks to today\'s daily page in Roam. Each item becomes its own actionable block with todo status.',
                 inputSchema: {
                   type: 'object',
                   properties: {
@@ -170,8 +170,8 @@ class RoamServer {
               },
               // Read page
           {
-            name: 'fetch_page_by_title',
-            description: 'Fetch the contents of a page by title and recursively resolve any block references',
+            name: 'roam_fetch_page_by_title',
+            description: 'Retrieve complete page contents by exact title, including all nested blocks and resolved block references. Use for reading and analyzing existing Roam pages.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -185,8 +185,8 @@ class RoamServer {
           },
           // Create page
           {
-            name: 'create_page',
-            description: 'Create a new page in Roam by title and any subpoints will be nested blocks.',
+            name: 'roam_create_page',
+            description: 'Create a new standalone page in Roam with given title. Best for hierarchical content, reference materials, and topics that deserve their own namespace. Optional initial content will be properly nested as blocks.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -204,8 +204,8 @@ class RoamServer {
           },
           // Create block
           {
-            name: 'create_block',
-            description: 'Create a new block on a page by title, defaulting to today\'s daily page if none provided.',
+            name: 'roam_create_block',
+            description: 'Add a new block to an existing Roam page. If no page specified, adds to today\'s daily note. Best for capturing immediate thoughts, additions to discussions, or content that doesn\'t warrant its own page. Can specify page by title or UID.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -225,38 +225,50 @@ class RoamServer {
               required: ['content'],
             },
           },
-          // Import nested markdown
+          // Import markdown
           {
-            name: 'import_nested_markdown',
-            description: 'Import nested markdown content into Roam as blocks on given page with title (defaults to today\'s page if none provided)',
+            name: 'roam_import_markdown',
+            description: 'Import nested markdown content into Roam under a specific block. Can locate the parent block by UID or by exact string match within a specific page.',
             inputSchema: {
               type: 'object',
               properties: {
-                title: {
+                content: {
                   type: 'string',
-                  description: 'Title of the page to add content to (defaults to today\'s page)'
+                  description: 'Nested markdown content to import'
                 },
-                markdown: {
+                page_uid: {
                   type: 'string',
-                  description: 'Markdown content to import'
+                  description: 'Optional: UID of the page containing the parent block'
+                },
+                page_title: {
+                  type: 'string',
+                  description: 'Optional: Title of the page containing the parent block (ignored if page_uid provided)'
+                },
+                parent_uid: {
+                  type: 'string',
+                  description: 'Optional: UID of the parent block to add content under'
+                },
+                parent_string: {
+                  type: 'string',
+                  description: 'Optional: Exact string content of the parent block to add content under (must provide either page_uid or page_title)'
                 },
                 order: {
                   type: 'string',
-                  description: 'Position to add blocks ("first" or "last")',
+                  description: 'Optional: Where to add the content under the parent ("first" or "last")',
                   enum: ['first', 'last'],
-                  default: 'last'
+                  default: 'first'
                 }
               },
-              required: ['markdown']
+              required: ['content']
             }
-          }
+          },
       ],
     }));
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         switch (request.params.name) {
-          case 'fetch_page_by_title': {
+          case 'roam_fetch_page_by_title': {
             const { title } = request.params.arguments as { title: string };
             
             if (!title) {
@@ -446,7 +458,7 @@ class RoamServer {
                   type: 'text',
                   text: `${title} (no content found)`
                 }
-              ]}
+              ]};
             }
           }
 
@@ -488,7 +500,7 @@ class RoamServer {
             };
           }
 
-          case 'create_page': {
+          case 'roam_create_page': {
             const { title, content } = request.params.arguments as { title: string; content?: string };
             // Ensure title is properly formatted
             const pageTitle = String(title).trim();
@@ -568,7 +580,7 @@ class RoamServer {
             };
           }
 
-          case 'create_block': {
+          case 'roam_create_block': {
             const { content, page_uid, title } = request.params.arguments as { 
               content: string; 
               page_uid?: string;
@@ -636,7 +648,7 @@ class RoamServer {
               }
             }
 
-            const success = await createBlock(this.graph, {
+            const result = await createBlock(this.graph, {
               action: 'create-block',
               location: { 
                 "parent-uid": targetPageUid,
@@ -645,202 +657,131 @@ class RoamServer {
               block: { string: content }
             });
             
-            if (!success) {
+            if (!result) {
               throw new Error('Failed to create block');
             }
+
+            // Get the newly created block's UID
+            const findBlockQuery = `[:find ?uid
+                                  :in $ ?parent ?string
+                                  :where [?b :block/uid ?uid]
+                                        [?b :block/string ?string]
+                                        [?b :block/parents ?p]
+                                        [?p :block/uid ?parent]]`;
+            const blockResults = await q(this.graph, findBlockQuery, [targetPageUid, content]) as [string][];
             
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({ success: true }, null, 2),
-                },
-              ],
-            };
-          }
-
-          case 'pull_data': {
-            const { pattern, uid } = request.params.arguments as { pattern: string; uid: string };
-            const result = await pull(this.graph, pattern, uid);
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify(result, null, 2),
-                },
-              ],
-            };
-          }
-
-          case 'pull_many_data': {
-            const { pattern, uids } = request.params.arguments as { pattern: string; uids: string };
-            const uidArray = uids.split(',');
-            const results = await Promise.all(
-              uidArray.map(uid => pull(this.graph, pattern, uid))
-            );
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify(results, null, 2),
-                },
-              ],
-            };
-          }
-
-          case 'move_block': {
-            const { block_uid, parent_uid, order } = request.params.arguments as { 
-              block_uid: string; 
-              parent_uid: string;
-              order: string | number;
-            };
-            const success = await moveBlock(this.graph, {
-              action: 'move-block',
-              location: {
-                'parent-uid': parent_uid,
-                order,
-              },
-              block: {
-                uid: block_uid,
-              },
-            });
-            
-            if (!success) {
-              throw new Error('Failed to move block');
+            if (!blockResults || blockResults.length === 0) {
+              throw new Error('Could not find created block');
             }
+
+            const blockUid = blockResults[0][0];
             
             return {
               content: [
                 {
                   type: 'text',
-                  text: JSON.stringify({ success: true }, null, 2),
+                  text: JSON.stringify({ 
+                    success: true,
+                    block_uid: blockUid,
+                    parent_uid: targetPageUid
+                  }, null, 2),
                 },
               ],
             };
           }
 
-          case 'update_block': {
-            const { uid, content, open, heading } = request.params.arguments as {
-              uid: string;
+          case 'roam_import_markdown': {
+            const { 
+              content,
+              page_uid,
+              page_title,
+              parent_uid,
+              parent_string,
+              order = 'first'
+            } = request.params.arguments as {
               content: string;
-              open?: boolean;
-              heading?: number;
-            };
-            const success = await updateBlock(this.graph, {
-              action: 'update-block',
-              block: {
-                uid,
-                string: content,
-                ...(open !== undefined && { open }),
-                ...(heading !== undefined && { heading }),
-              },
-            });
-            
-            if (!success) {
-              throw new Error('Failed to update block');
-            }
-            
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({ success: true }, null, 2),
-                },
-              ],
-            };
-          }
-
-          case 'delete_block': {
-            const { uid } = request.params.arguments as { uid: string };
-            const success = await deleteBlock(this.graph, {
-              action: 'delete-block',
-              block: { uid },
-            });
-            
-            if (!success) {
-              throw new Error('Failed to delete block');
-            }
-            
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({ success: true }, null, 2),
-                },
-              ],
-            };
-          }
-
-          case 'delete_page': {
-            const { uid } = request.params.arguments as { uid: string };
-            const success = await deletePage(this.graph, {
-              action: 'delete-page',
-              page: { uid },
-            });
-            
-            if (!success) {
-              throw new Error('Failed to delete page');
-            }
-            
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({ success: true }, null, 2),
-                },
-              ],
-            };
-          }
-
-          case 'import_nested_markdown': {
-            const { title, markdown, order = 'last' } = request.params.arguments as {
-              title?: string;
-              markdown: string;
+              page_uid?: string;
+              page_title?: string;
+              parent_uid?: string;
+              parent_string?: string;
               order?: 'first' | 'last';
             };
 
-            // Extract title from first heading or use today's date
-            let pageTitle = title;
-            if (!pageTitle) {
-              const today = new Date();
-              pageTitle = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+            // First get the page UID
+            let targetPageUid = page_uid;
+            
+            if (!targetPageUid && page_title) {
+              const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
+              const findResults = await q(this.graph, findQuery, [page_title]) as [string][];
+              
+              if (findResults && findResults.length > 0) {
+                targetPageUid = findResults[0][0];
+              } else {
+                throw new Error(`Page with title "${page_title}" not found`);
+              }
             }
 
-            // First try to find if the page exists
-            const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
-            const findResults = await q(this.graph, findQuery, [pageTitle]) as [string][];
-            
-            let pageUid: string;
-            
-            if (findResults && findResults.length > 0) {
-              // Page exists, use its UID
-              pageUid = findResults[0][0];
-            } else {
-              // Create new page
-              const success = await createPage(this.graph, {
-                action: 'create-page',
-                page: {
-                  title: pageTitle
+            // If no page specified, use today's date page
+            if (!targetPageUid) {
+              const today = new Date();
+              const dateStr = formatRoamDate(today);
+              
+              const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
+              const findResults = await q(this.graph, findQuery, [dateStr]) as [string][];
+              
+              if (findResults && findResults.length > 0) {
+                targetPageUid = findResults[0][0];
+              } else {
+                // Create today's page
+                const success = await createPage(this.graph, {
+                  action: 'create-page',
+                  page: { title: dateStr }
+                });
+
+                if (!success) {
+                  throw new Error('Failed to create today\'s page');
                 }
-              });
 
-              if (!success) {
-                throw new Error('Failed to create page');
+                const results = await q(this.graph, findQuery, [dateStr]) as [string][];
+                if (!results || results.length === 0) {
+                  throw new Error('Could not find created today\'s page');
+                }
+                targetPageUid = results[0][0];
+              }
+            }
+
+            // Now get the parent block UID
+            let targetParentUid = parent_uid;
+
+            if (!targetParentUid && parent_string) {
+              if (!targetPageUid) {
+                throw new Error('Must provide either page_uid or page_title when using parent_string');
               }
 
-              // Get the new page's UID
-              const results = await q(this.graph, findQuery, [pageTitle]) as [string][];
-              if (!results || results.length === 0) {
-                throw new Error('Could not find created page');
+              // Find block by exact string match within the page
+              const findBlockQuery = `[:find ?uid
+                                    :where [?p :block/uid "${targetPageUid}"]
+                                           [?b :block/page ?p]
+                                           [?b :block/string "${parent_string}"]]`;
+              const blockResults = await q(this.graph, findBlockQuery, []) as [string][];
+              
+              if (!blockResults || blockResults.length === 0) {
+                throw new Error(`Block with content "${parent_string}" not found on specified page`);
               }
-              pageUid = results[0][0];
+              
+              targetParentUid = blockResults[0][0];
+            }
+
+            // If no parent specified, use page as parent
+            if (!targetParentUid) {
+              targetParentUid = targetPageUid;
             }
 
             // Parse markdown into hierarchical structure
-            const nodes = parseMarkdown(markdown);
+            const nodes = parseMarkdown(content);
 
             // Convert markdown nodes to batch actions
-            const actions = convertToRoamActions(nodes, pageUid, order);
+            const actions = convertToRoamActions(nodes, targetParentUid, order);
 
             // Execute batch actions to add content
             const result = await batchActions(this.graph, {
@@ -848,25 +789,29 @@ class RoamServer {
               actions
             });
 
-            // Extract created block UIDs
-            const createdUids = result.created_uids || [];
+            if (!result) {
+              throw new Error('Failed to import markdown content');
+            }
 
+            // Get the created block UIDs
+            const createdUids = result.created_uids || [];
+            
             return {
               content: [
                 {
                   type: 'text',
                   text: JSON.stringify({ 
-                    success: true, 
-                    page_title: pageTitle,
-                    page_uid: pageUid,
-                    created_uids: createdUids 
+                    success: true,
+                    page_uid: targetPageUid,
+                    parent_uid: targetParentUid,
+                    created_uids: createdUids
                   }, null, 2),
                 },
               ],
             };
           }
 
-          case 'add_todo': {
+          case 'roam_add_todo': {
             const { todos } = request.params.arguments as { todos: string[] };
             
             if (!Array.isArray(todos) || todos.length === 0) {
@@ -952,23 +897,6 @@ class RoamServer {
                 {
                   type: 'text',
                   text: JSON.stringify({ success: true }, null, 2),
-                },
-              ],
-            };
-          }
-
-          case 'batch_actions': {
-            const { actions } = request.params.arguments as { actions: BatchAction[] };
-            const result = await batchActions(this.graph, {
-              action: 'batch-actions',
-              actions
-            });
-
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify(result, null, 2),
                 },
               ],
             };
