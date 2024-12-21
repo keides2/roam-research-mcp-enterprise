@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.10.0] - 2024-12-21
+
+### Changed
+
+- Enhanced add_todo tool to support multiple todos:
+  - Now accepts an array of todos instead of a single todo
+  - Uses batch actions for efficiency when adding more than 10 todos
+  - Maintains sequential creation for smaller sets of todos
+  - Preserves existing page handling and checkbox formatting
+
+## [0.9.2] - 2024-12-21
+
+### Changed
+
+- Modified add_todo tool to use YYYY-MM-DD format for page UIDs:
+  - Uses ISO date format (e.g., "2024-12-21") as the parent UID
+  - Maintains human-readable date format for page title
+  - Simplifies block creation by using date UID directly
+
+## [0.9.1] - 2024-12-21
+
+### Changed
+
+- Improved date formatting for daily pages:
+  - Added helper functions for proper ordinal date formatting
+  - Updated date format to match Roam's style (e.g., "December 21st, 2024")
+  - Applied to both add_todo and create_block tools
+  - Ensures consistent date page references
+
+## [0.9.0] - 2024-12-21
+
+### Added
+
+- New `add_todo` tool for adding todo items:
+  - Creates todo blocks with checkbox syntax (`- [ ] todo text`)
+  - Automatically adds to today's daily page
+  - Creates today's page if it doesn't exist
+  - Adds todos as top-level blocks in last position
+
 ## [0.8.0] - 2024-12-21
 
 ### Added

@@ -91,6 +91,24 @@ if (!API_TOKEN || !GRAPH_NAME) {
   );
 }
 
+// Helper function to get ordinal suffix
+function getOrdinalSuffix(n: number): string {
+  const j = n % 10;
+  const k = n % 100;
+  if (j === 1 && k !== 11) return "st";
+  if (j === 2 && k !== 12) return "nd";
+  if (j === 3 && k !== 13) return "rd";
+  return "th";
+}
+
+// Helper function to format date in Roam's format
+function formatRoamDate(date: Date): string {
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const day = date.getDate();
+  const year = date.getFullYear();
+  return `${month} ${day}${getOrdinalSuffix(day)}, ${year}`;
+}
+
 class RoamServer {
   private server: Server;
   private graph: Graph;
@@ -103,11 +121,12 @@ class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.8.0',
+        version: '0.10.0',
       },
       {
           capabilities: {
             tools: {
+              add_todo: {},
               fetch_page_by_title: {},
               create_page: {},
               create_block: {},
@@ -129,8 +148,27 @@ class RoamServer {
 
   private setupToolHandlers() {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
-        tools: [
-          // Read page
+            tools: [
+              // Add todo
+              {
+                name: 'add_todo',
+                description: 'Add todo items as blocks on today\'s daily page',
+                inputSchema: {
+                  type: 'object',
+                  properties: {
+                    todos: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                        description: 'Todo item text'
+                      },
+                      description: 'List of todo items to add'
+                    }
+                  },
+                  required: ['todos'],
+                },
+              },
+              // Read page
           {
             name: 'fetch_page_by_title',
             description: 'Fetch the contents of a page by title and recursively resolve any block references',
@@ -570,7 +608,7 @@ class RoamServer {
             // If neither page_uid nor title provided, use today's date page
             if (!targetPageUid) {
               const today = new Date();
-              const dateStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+              const dateStr = formatRoamDate(today);
               
               // Try to find today's page
               const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
@@ -823,6 +861,97 @@ class RoamServer {
                     page_uid: pageUid,
                     created_uids: createdUids 
                   }, null, 2),
+                },
+              ],
+            };
+          }
+
+          case 'add_todo': {
+            const { todos } = request.params.arguments as { todos: string[] };
+            
+            if (!Array.isArray(todos) || todos.length === 0) {
+              throw new McpError(
+                ErrorCode.InvalidRequest,
+                'todos must be a non-empty array'
+              );
+            }
+
+            // Get today's date
+            const today = new Date();
+            const dateStr = formatRoamDate(today);
+            
+            // Try to find today's page
+            const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
+            const findResults = await q(this.graph, findQuery, [dateStr]) as [string][];
+            
+            let targetPageUid: string;
+            
+            if (findResults && findResults.length > 0) {
+              targetPageUid = findResults[0][0];
+            } else {
+              // Create today's page if it doesn't exist
+              const success = await createPage(this.graph, {
+                action: 'create-page',
+                page: { title: dateStr }
+              });
+
+              if (!success) {
+                throw new Error('Failed to create today\'s page');
+              }
+
+              // Get the new page's UID
+              const results = await q(this.graph, findQuery, [dateStr]) as [string][];
+              if (!results || results.length === 0) {
+                throw new Error('Could not find created today\'s page');
+              }
+              targetPageUid = results[0][0];
+            }
+
+            // If more than 10 todos, use batch actions
+            if (todos.length > 10) {
+              const todo_tag = "{{TODO}}";
+              const actions = todos.map((todo, index) => ({
+                action: 'create-block',
+                location: {
+                  'parent-uid': targetPageUid,
+                  order: index
+                },
+                block: {
+                  string: `${todo_tag} ${todo}`
+                }
+              }));
+
+              const result = await batchActions(this.graph, {
+                action: 'batch-actions',
+                actions
+              });
+
+              if (!result) {
+                throw new Error('Failed to create todo blocks');
+              }
+            } else {
+              // Create todos sequentially
+              for (const todo of todos) {
+                const success = await createBlock(this.graph, {
+                  action: 'create-block',
+                  location: { 
+                    "parent-uid": targetPageUid,
+                    "order": "last"
+                  },
+                  block: { string: `- [ ] ${todo}` }
+                });
+                
+                if (!success) {
+                  throw new Error('Failed to create todo block');
+                }
+              }
+            }
+            
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify({ success: true }, null, 2),
                 },
               ],
             };
