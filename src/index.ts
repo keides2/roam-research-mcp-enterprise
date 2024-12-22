@@ -937,8 +937,8 @@ class RoamServer {
             }
 
             // If more than 10 todos, use batch actions
+            const todo_tag = "{{TODO}}";
             if (todos.length > 10) {
-              const todo_tag = "{{TODO}}";
               const actions = todos.map((todo, index) => ({
                 action: 'create-block',
                 location: {
@@ -967,7 +967,7 @@ class RoamServer {
                     "parent-uid": targetPageUid,
                     "order": "last"
                   },
-                  block: { string: `- [ ] ${todo}` }
+                  block: { string: `${todo_tag} ${todo}` }
                 });
                 
                 if (!success) {
