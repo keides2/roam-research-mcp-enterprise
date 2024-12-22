@@ -21,97 +21,191 @@ interface MarkdownNode {
   children: MarkdownNode[];
 }
 
-export function parseMarkdown(markdown: string): MarkdownNode[] {
-  const lines = markdown.split('\n');
-  const root: MarkdownNode[] = [];
-  const stack: MarkdownNode[] = [];
-  let lastNode: MarkdownNode | null = null;
-  
-  // Process first line separately if it's a heading
-  const firstLine = lines[0]?.trim();
-  if (firstLine && firstLine.startsWith('#')) {
-    const headingNode = parseLine(firstLine);
-    root.push(headingNode);
-    lastNode = headingNode;
-    lines.shift(); // Remove first line from processing
-  }
-  
-  // Process remaining lines
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    
-    const node = parseLine(line);
-    
-    if (lastNode === null) {
-      root.push(node);
-      lastNode = node;
-      continue;
-    }
-    
-    // If this is a child of the last node
-    if (node.level > lastNode.level) {
-      lastNode.children.push(node);
-    }
-    // If this is a sibling or belongs to a parent
-    else {
-      // Find the appropriate parent
-      let parent: MarkdownNode | undefined = lastNode;
-      while (parent && parent.level >= node.level) {
-        const idx = stack.lastIndexOf(parent);
-        if (idx > 0) {
-          parent = stack[idx - 1];
-        } else {
-          parent = undefined;
-        }
-      }
-      
-      if (parent) {
-        parent.children.push(node);
-      } else if (root.length === 1 && root[0].content) {
-        // If we have a heading as root, nest under it
-        root[0].children.push(node);
-      } else {
-        root.push(node);
-      }
-    }
-    
-    stack.push(node);
-    lastNode = node;
-  }
-  
-  return root;
+/**
+ * Check if text has a traditional markdown table
+ */
+function hasMarkdownTable(text: string): boolean {
+  return /^\|([^|]+\|)+\s*$\n\|(\s*:?-+:?\s*\|)+\s*$\n(\|([^|]+\|)+\s*$\n*)+$/.test(text);
 }
 
-function parseLine(line: string): MarkdownNode {
-  let level = 0;
-  let content = line.trim();
+/**
+ * Converts a markdown table to Roam format
+ */
+function convertTableToRoamFormat(text: string) {
+  const lines = text.split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  const tableRegex = /^\|([^|]+\|)+\s*$\n\|(\s*:?-+:?\s*\|)+\s*$\n(\|([^|]+\|)+\s*$\n*)+/m;
+
+  if (!tableRegex.test(text)) {
+    return text;
+  }
+
+  const rows = lines
+    .filter((_, index) => index !== 1)
+    .map(line => 
+      line.trim()
+        .replace(/^\||\|$/g, '')
+        .split('|')
+        .map(cell => cell.trim())
+    );
+
+  let roamTable = '{{table}}\n';
   
-  // Handle headings
-  if (content.startsWith('#')) {
-    const match = content.match(/^(#{1,6})\s+(.+)$/);
-    if (match) {
-      level = match[1].length;
-      content = match[2];
+  // First row becomes column headers
+  const headers = rows[0];
+  for (let i = 0; i < headers.length; i++) {
+    roamTable += `${'  '.repeat(i + 1)}- ${headers[i]}\n`;
+  }
+  
+  // Remaining rows become nested under each column
+  for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+    const row = rows[rowIndex];
+    for (let colIndex = 0; colIndex < row.length; colIndex++) {
+      roamTable += `${'  '.repeat(colIndex + 1)}- ${row[colIndex]}\n`;
     }
   }
-  // Calculate indentation level (2 spaces = 1 level)
-  const indentation = line.match(/^\s*/)?.[0].length ?? 0;
-  level = Math.floor(indentation / 2);
 
-  // Handle list items
-  if (content.match(/^[*+-]\s/)) {
-    content = content.replace(/^[*+-]\s+/, '');
-  }
-  // Handle numbered lists
-  else if (content.match(/^\d+\.\s/)) {
-    content = content.replace(/^\d+\.\s+/, '');
-  }
+  return roamTable.trim();
+}
+
+function convertAllTables(text: string) {
+  return text.replaceAll(
+    /(^\|([^|]+\|)+\s*$\n\|(\s*:?-+:?\s*\|)+\s*$\n(\|([^|]+\|)+\s*$\n*)+)/gm,
+          (match) => {
+      return '\n' + convertTableToRoamFormat(match) + '\n';
+          }
+        );
+      }
+
+function convertToRoamMarkdown(text: string): string {
+  // First handle double asterisks/underscores (bold)
+  text = text.replace(/\*\*(.+?)\*\*/g, '**$1**');  // Preserve double asterisks
   
-  return {
-    content,
-    level,
-    children: []
-  };
+  // Then handle single asterisks/underscores (italic)
+  text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '__$1__');  // Single asterisk to double underscore
+  text = text.replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '__$1__');        // Single underscore to double underscore
+  
+  // Handle highlights
+  text = text.replace(/==(.+?)==/g, '^^$1^^');
+  
+  // Convert tables
+  text = convertAllTables(text);
+  
+  return text;
+}
+
+function parseMarkdown(markdown: string): MarkdownNode[] {
+  const lines = markdown.split('\n');
+  const rootNodes: MarkdownNode[] = [];
+  const stack: MarkdownNode[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmedLine = line.trimEnd();
+    
+    // Skip truly empty lines (no spaces)
+    if (trimmedLine === '') {
+      continue;
+    }
+
+    // Calculate indentation level (2 spaces = 1 level)
+    const indentation = line.match(/^\s*/)?.[0].length ?? 0;
+    let level = Math.floor(indentation / 2);
+
+    // Extract content after bullet point or heading
+    let content = trimmedLine;
+    if (trimmedLine.startsWith('#') || trimmedLine.includes('{{table}}')) {
+      // Remove bullet point if it precedes a table marker
+      content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
+      level = 0;
+      // Reset stack but keep heading/table as parent
+      stack.length = 1;  // Keep only the heading/table
+    } else if (stack[0]?.content.startsWith('#') || stack[0]?.content.includes('{{table}}')) {
+      // If previous node was a heading or table marker, increase level by 1
+      level = Math.max(level, 1);
+      // Remove bullet point
+      content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
+    } else {
+      // Remove bullet point
+      content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
+    }
+
+    // Create new node
+    const node: MarkdownNode = {
+      content,
+      level,
+      children: []
+    };
+
+    // Find the appropriate parent for this node based on level
+    if (level === 0) {
+      rootNodes.push(node);
+      stack[0] = node;
+    } else {
+      // Pop stack until we find the parent level
+      while (stack.length > level) {
+        stack.pop();
+      }
+      
+      // Add as child to parent
+      if (stack[level - 1]) {
+        stack[level - 1].children.push(node);
+      } else {
+        // If no parent found, treat as root node
+        rootNodes.push(node);
+      }
+      stack[level] = node;
+    }
+  }
+
+  return rootNodes;
+}
+
+function parseTableRows(lines: string[]): MarkdownNode[] {
+  const tableNodes: MarkdownNode[] = [];
+  let currentLevel = -1;
+
+  for (const line of lines) {
+    const trimmedLine = line.trimEnd();
+    if (!trimmedLine) continue;
+
+    // Calculate indentation level
+    const indentation = line.match(/^\s*/)?.[0].length ?? 0;
+    const level = Math.floor(indentation / 2);
+
+    // Extract content after bullet point
+    const content = trimmedLine.replace(/^\s*[-*+]\s*/, '');
+
+    // Create node for this cell
+    const node: MarkdownNode = {
+      content,
+      level,
+      children: []
+    };
+
+    // Track the first level we see to maintain relative nesting
+    if (currentLevel === -1) {
+      currentLevel = level;
+    }
+
+    // Add node to appropriate parent based on level
+    if (level === currentLevel) {
+      tableNodes.push(node);
+    } else {
+      // Find parent by walking back through nodes
+      let parent = tableNodes[tableNodes.length - 1];
+      while (parent && parent.level < level - 1) {
+        parent = parent.children[parent.children.length - 1];
+      }
+      if (parent) {
+        parent.children.push(node);
+      }
+    }
+  }
+
+  return tableNodes;
 }
 
 function generateBlockUid(): string {
@@ -138,7 +232,7 @@ function convertNodesToBlocks(nodes: MarkdownNode[]): BlockInfo[] {
   }));
 }
 
-export function convertToRoamActions(
+function convertToRoamActions(
   nodes: MarkdownNode[], 
   parentUid: string,
   order: 'first' | 'last' | number = 'last'
@@ -177,3 +271,12 @@ export function convertToRoamActions(
   
   return actions;
 }
+
+// Export public functions and types
+export {
+  parseMarkdown,
+  convertToRoamActions,
+  hasMarkdownTable,
+  convertAllTables,
+  convertToRoamMarkdown
+};

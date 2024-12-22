@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.12.3] - 2024-12-21
+
+### Fixed
+
+- Improved table parsing in markdown import:
+  - Fixed loss of "Name" column and other first-level columns in tables
+  - Simplified table handling by treating {{table}} markers like headings
+  - Removed unnecessary special case handling for tables
+  - Properly maintains all column headers and row values
+  - Preserves correct nesting structure for all table elements
+
+## [0.12.2] - 2024-12-21
+
+### Added
+
+- Added support for converting traditional markdown tables to Roam Research table format:
+  - Automatically detects and converts pipe-delimited tables
+  - Transforms tables into Roam's {{[[table]]}} format
+  - Preserves headers and data rows with proper nesting
+  - Maintains cell alignment and spacing
+  - Integrates with existing markdown conversion pipeline
+
+## [0.12.1] - 2024-12-21
+
+### Fixed
+
+- Fixed markdown parsing in roam_import_markdown and roam_create_page:
+  - Properly nests bullet points under bold text sections
+  - Resets nesting level for each new bold line
+  - Preserves markdown formatting (\*\* markers)
+  - Maintains consistent hierarchy for all content types
+
 ## [0.12.0] - 2024-12-21
 
 ### Changed
@@ -19,6 +51,9 @@
   - Control content placement order (first or last)
   - Returns created block UIDs for reference
   - Efficient batch operations for nested content
+  - Automatic detection and handling of nested vs non-nested content
+  - Improved error handling with specific error codes
+  - Consistent response format with other tools
 
 ## [0.11.1] - 2024-12-21
 

@@ -24,7 +24,14 @@ import * as dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { existsSync } from 'fs';
-import { parseMarkdown, convertToRoamActions, type BatchAction } from './markdown-utils.js';
+import { 
+  parseMarkdown, 
+  convertToRoamActions, 
+  type BatchAction, 
+  convertAllTables, 
+  hasMarkdownTable,
+  convertToRoamMarkdown 
+} from './markdown-utils.js';
 
 // Define RoamBlock interface
 interface RoamBlock {
@@ -38,25 +45,13 @@ interface RoamBlock {
 const scriptPath = process.argv[1];  // Full path to the running script
 const projectRoot = dirname(dirname(scriptPath));  // Go up two levels from build/index.js
 
-console.error('Script path:', scriptPath);
-console.error('Project root:', projectRoot);
-
 // Try to load .env from project root
 const envPath = join(projectRoot, '.env');
-console.error(`Looking for .env file at: ${envPath}`);
-
 if (existsSync(envPath)) {
-  console.error(`Found .env file at: ${envPath}`);
   const result = dotenv.config({ path: envPath });
-  if (result.error) {
-    console.error('Error loading .env file:', result.error);
-  } else {
-    console.error('Successfully loaded .env file');
-  }
 } else {
-  console.error('No .env file found');
+  // No logging needed
 }
-
 
 const API_TOKEN = process.env.ROAM_API_TOKEN as string;
 const GRAPH_NAME = process.env.ROAM_GRAPH_NAME as string;
@@ -121,7 +116,7 @@ class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.12.0',
+        version: '0.12.1',
       },
       {
           capabilities: {
@@ -139,7 +134,7 @@ class RoamServer {
     this.setupToolHandlers();
     
     // Error handling
-    this.server.onerror = (error) => console.error('[MCP Error]', error);
+    this.server.onerror = (error) => { /* handle error silently */ };
     process.on('SIGINT', async () => {
       await this.server.close();
       process.exit(0);
@@ -186,7 +181,7 @@ class RoamServer {
           // Create page
           {
             name: 'roam_create_page',
-            description: 'Create a new standalone page in Roam with given title. Best for hierarchical content, reference materials, and topics that deserve their own namespace. Optional initial content will be properly nested as blocks.',
+            description: 'Create a new standalone page in Roam from markdown with given title. Best for hierarchical content, reference materials, markdown tables, and topics that deserve their own namespace. Optional initial content will be properly nested as blocks.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -535,16 +530,17 @@ class RoamServer {
               }
               pageUid = results[0][0];
             }
-
+            
             // If content is provided, check if it looks like nested markdown
             if (content) {
-              // Check if content starts with bullet points (- or *)
-              const isNestedMarkdown = /^[\s]*[-*]/.test(content);
+
+              const isMultilined = content.includes('\n') || hasMarkdownTable(content);
               
-              if (isNestedMarkdown) {
+              if (isMultilined) {
                 // Use import_nested_markdown functionality
-                const nodes = parseMarkdown(content);
-                const actions = convertToRoamActions(nodes, pageUid, 'first');
+                const convertedContent = convertToRoamMarkdown(content);
+                const nodes = parseMarkdown(convertedContent);
+                const actions = convertToRoamActions(nodes, pageUid, 'last');
                 const result = await batchActions(this.graph, {
                   action: 'batch-actions',
                   actions
@@ -559,7 +555,7 @@ class RoamServer {
                   action: 'create-block',
                   location: { 
                     "parent-uid": pageUid,
-                    "order": "first"
+                    "order": "last"
                   },
                   block: { string: content }
                 });
@@ -648,46 +644,80 @@ class RoamServer {
               }
             }
 
-            const result = await createBlock(this.graph, {
-              action: 'create-block',
-              location: { 
-                "parent-uid": targetPageUid,
-                "order": "last"
-              },
-              block: { string: content }
-            });
-            
-            if (!result) {
-              throw new Error('Failed to create block');
-            }
+            // If the converted content has multiple lines (e.g. from table conversion)
+            // or is a table (which will be converted to multiple lines), use nested import
+            if (content.includes('\n')) {
+              // Parse and import the nested content
+              const convertedContent = convertToRoamMarkdown(content);
+              const nodes = parseMarkdown(convertedContent);
+              const actions = convertToRoamActions(nodes, targetPageUid, 'last');
+              
+              // Execute batch actions to create the nested structure
+              const result = await batchActions(this.graph, {
+                action: 'batch-actions',
+                actions
+              });
 
-            // Get the newly created block's UID
-            const findBlockQuery = `[:find ?uid
-                                  :in $ ?parent ?string
-                                  :where [?b :block/uid ?uid]
-                                        [?b :block/string ?string]
-                                        [?b :block/parents ?p]
-                                        [?p :block/uid ?parent]]`;
-            const blockResults = await q(this.graph, findBlockQuery, [targetPageUid, content]) as [string][];
-            
-            if (!blockResults || blockResults.length === 0) {
-              throw new Error('Could not find created block');
-            }
+              if (!result) {
+                throw new Error('Failed to create nested blocks');
+              }
 
-            const blockUid = blockResults[0][0];
-            
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({ 
-                    success: true,
-                    block_uid: blockUid,
-                    parent_uid: targetPageUid
-                  }, null, 2),
+              const blockUid = result.created_uids?.[0];
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify({ 
+                      success: true,
+                      block_uid: blockUid,
+                      parent_uid: targetPageUid
+                    }, null, 2),
+                  },
+                ],
+              };
+            } else {
+              // For non-table content, create a simple block
+              const result = await createBlock(this.graph, {
+                action: 'create-block',
+                location: { 
+                  "parent-uid": targetPageUid,
+                  "order": "last"
                 },
-              ],
-            };
+                block: { string: content }
+              });
+
+              if (!result) {
+                throw new Error('Failed to create block');
+              }
+
+              // Get the block's UID
+              const findBlockQuery = `[:find ?uid
+                                    :in $ ?parent ?string
+                                    :where [?b :block/uid ?uid]
+                                          [?b :block/string ?string]
+                                          [?b :block/parents ?p]
+                                          [?p :block/uid ?parent]]`;
+              const blockResults = await q(this.graph, findBlockQuery, [targetPageUid, content]) as [string][];
+              
+              if (!blockResults || blockResults.length === 0) {
+                throw new Error('Could not find created block');
+              }
+
+              const blockUid = blockResults[0][0];
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify({ 
+                      success: true,
+                      block_uid: blockUid,
+                      parent_uid: targetPageUid
+                    }, null, 2),
+                  },
+                ],
+              };
+            }
+            
           }
 
           case 'roam_import_markdown': {
@@ -717,7 +747,10 @@ class RoamServer {
               if (findResults && findResults.length > 0) {
                 targetPageUid = findResults[0][0];
               } else {
-                throw new Error(`Page with title "${page_title}" not found`);
+                throw new McpError(
+                  ErrorCode.InvalidRequest,
+                  `Page with title "${page_title}" not found`
+                );
               }
             }
 
@@ -739,12 +772,18 @@ class RoamServer {
                 });
 
                 if (!success) {
-                  throw new Error('Failed to create today\'s page');
+                  throw new McpError(
+                    ErrorCode.InternalError,
+                    'Failed to create today\'s page'
+                  );
                 }
 
                 const results = await q(this.graph, findQuery, [dateStr]) as [string][];
                 if (!results || results.length === 0) {
-                  throw new Error('Could not find created today\'s page');
+                  throw new McpError(
+                    ErrorCode.InternalError,
+                    'Could not find created today\'s page'
+                  );
                 }
                 targetPageUid = results[0][0];
               }
@@ -755,7 +794,10 @@ class RoamServer {
 
             if (!targetParentUid && parent_string) {
               if (!targetPageUid) {
-                throw new Error('Must provide either page_uid or page_title when using parent_string');
+                throw new McpError(
+                  ErrorCode.InvalidRequest,
+                  'Must provide either page_uid or page_title when using parent_string'
+                );
               }
 
               // Find block by exact string match within the page
@@ -766,7 +808,10 @@ class RoamServer {
               const blockResults = await q(this.graph, findBlockQuery, []) as [string][];
               
               if (!blockResults || blockResults.length === 0) {
-                throw new Error(`Block with content "${parent_string}" not found on specified page`);
+                throw new McpError(
+                  ErrorCode.InvalidRequest,
+                  `Block with content "${parent_string}" not found on specified page`
+                );
               }
               
               targetParentUid = blockResults[0][0];
@@ -777,38 +822,77 @@ class RoamServer {
               targetParentUid = targetPageUid;
             }
 
-            // Parse markdown into hierarchical structure
-            const nodes = parseMarkdown(content);
-
-            // Convert markdown nodes to batch actions
-            const actions = convertToRoamActions(nodes, targetParentUid, order);
-
-            // Execute batch actions to add content
-            const result = await batchActions(this.graph, {
-              action: 'batch-actions',
-              actions
-            });
-
-            if (!result) {
-              throw new Error('Failed to import markdown content');
-            }
-
-            // Get the created block UIDs
-            const createdUids = result.created_uids || [];
+            // Always use parseMarkdown for content with multiple lines or any markdown formatting
+            const isMultilined = content.includes('\n');
             
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: JSON.stringify({ 
-                    success: true,
-                    page_uid: targetPageUid,
-                    parent_uid: targetParentUid,
-                    created_uids: createdUids
-                  }, null, 2),
+            if (isMultilined) {
+              // Parse markdown into hierarchical structure
+              const convertedContent = convertToRoamMarkdown(content);
+              const nodes = parseMarkdown(convertedContent);
+
+              // Convert markdown nodes to batch actions
+              const actions = convertToRoamActions(nodes, targetParentUid, order);
+
+              // Execute batch actions to add content
+              const result = await batchActions(this.graph, {
+                action: 'batch-actions',
+                actions
+              });
+
+              if (!result) {
+                throw new McpError(
+                  ErrorCode.InternalError,
+                  'Failed to import nested markdown content'
+                );
+              }
+
+              // Get the created block UIDs
+              const createdUids = result.created_uids || [];
+              
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify({ 
+                      success: true,
+                      page_uid: targetPageUid,
+                      parent_uid: targetParentUid,
+                      created_uids: createdUids
+                    }, null, 2),
+                  },
+                ],
+              };
+            } else {
+              // Create a simple block for non-nested content
+              const blockSuccess = await createBlock(this.graph, {
+                action: 'create-block',
+                location: { 
+                  "parent-uid": targetParentUid,
+                  order
                 },
-              ],
-            };
+                block: { string: content }
+              });
+
+              if (!blockSuccess) {
+                throw new McpError(
+                  ErrorCode.InternalError,
+                  'Failed to create content block'
+                );
+              }
+
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: JSON.stringify({ 
+                      success: true,
+                      page_uid: targetPageUid,
+                      parent_uid: targetParentUid
+                    }, null, 2),
+                  },
+                ],
+              };
+            }
           }
 
           case 'roam_add_todo': {
@@ -924,9 +1008,8 @@ class RoamServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('Roam Research MCP server running on stdio');
   }
 }
 
 const server = new RoamServer();
-server.run().catch(console.error);
+server.run().catch(() => { /* handle error silently */ });
