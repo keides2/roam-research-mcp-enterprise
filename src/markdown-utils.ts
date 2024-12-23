@@ -114,19 +114,21 @@ function parseMarkdown(markdown: string): MarkdownNode[] {
     const indentation = line.match(/^\s*/)?.[0].length ?? 0;
     let level = Math.floor(indentation / 2);
 
+    
     // Extract content after bullet point or heading
     let content = trimmedLine;
-    if (trimmedLine.startsWith('#') || trimmedLine.includes('{{table}}')) {
+    content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
+    if (trimmedLine.startsWith('#') || trimmedLine.includes('{{table}}') || (trimmedLine.startsWith('**') && trimmedLine.endsWith('**'))) {
       // Remove bullet point if it precedes a table marker
-      content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
+      // content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
       level = 0;
       // Reset stack but keep heading/table as parent
       stack.length = 1;  // Keep only the heading/table
-    } else if (stack[0]?.content.startsWith('#') || stack[0]?.content.includes('{{table}}')) {
-      // If previous node was a heading or table marker, increase level by 1
+    } else if (stack[0]?.content.startsWith('#') || stack[0]?.content.includes('{{table}}') || (stack[0]?.content.startsWith('**') && stack[0]?.content.endsWith('**'))) {
+      // If previous node was a heading or table marker or wrapped in double-asterisks, increase level by 1
       level = Math.max(level, 1);
       // Remove bullet point
-      content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
+      // content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
     } else {
       // Remove bullet point
       content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
