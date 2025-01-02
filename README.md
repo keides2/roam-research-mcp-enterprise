@@ -25,13 +25,14 @@ npm run build
 
 ## Features
 
-The server provides five powerful tools for interacting with Roam Research:
+The server provides six powerful tools for interacting with Roam Research:
 
 1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `roam_create_page`: Create new pages with optional content
 3. `roam_create_block`: Create new blocks in a page (defaults to today's daily page)
 4. `roam_import_markdown`: Import nested markdown content under specific blocks
 5. `roam_add_todo`: Add multiple todo items to today's daily page with checkbox syntax
+6. `roam_create_outline`: Create hierarchical outlines with proper nesting and structure
 
 ## Setup
 
@@ -158,6 +159,59 @@ Returns:
 }
 ```
 
+### Create Outline
+
+Create a hierarchical outline with proper nesting and structure:
+
+```typescript
+use_mcp_tool roam-research roam_create_outline {
+  "outline": [
+    {
+      "text": "I. Top Level",
+      "level": 1
+    },
+    {
+      "text": "A. Second Level",
+      "level": 2
+    },
+    {
+      "text": "1. Third Level",
+      "level": 3
+    }
+  ],
+  "page_title_uid": "optional-target-page",
+  "block_text_uid": "optional-header-text"
+}
+```
+
+Features:
+
+- Create complex outlines with up to 10 levels of nesting
+- Validate outline structure and content
+- Maintain proper parent-child relationships
+- Optional header block for the outline
+- Defaults to today's daily page if no page specified
+- Efficient batch operations for creating blocks
+
+Parameters:
+
+- `outline`: Array of outline items, each with:
+  - `text`: Content of the outline item (required)
+  - `level`: Nesting level (1-10, required)
+- `page_title_uid`: Target page title or UID (optional, defaults to today's page)
+- `block_text_uid`: Header text for the outline (optional)
+
+Returns:
+
+```json
+{
+  "success": true,
+  "page_uid": "target-page-uid",
+  "parent_uid": "header-block-uid",
+  "created_uids": ["uid1", "uid2", ...]
+}
+```
+
 ### Add Todo Items
 
 Add one or more todo items to today's daily page:
@@ -240,6 +294,7 @@ The server provides comprehensive error handling for common scenarios:
   - Block not found by string match
   - Invalid markdown format
   - Missing required parameters
+  - Invalid outline structure or content
 
 Each error response includes:
 
@@ -259,6 +314,7 @@ The server is built with TypeScript and includes:
 - Daily page integration
 - Detailed debug logging
 - Efficient batch operations
+- Hierarchical outline creation
 
 To modify or extend the server:
 

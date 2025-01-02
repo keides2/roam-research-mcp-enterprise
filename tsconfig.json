@@ -10,6 +10,12 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src/**/*",
+    "tests/test-addMarkdownText.ts",
+    "tests/test-queries.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
