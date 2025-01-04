@@ -18,6 +18,7 @@ export type BatchAction =
 interface MarkdownNode {
   content: string;
   level: number;
+  heading_level?: number;  // Optional heading level (1-3) for heading nodes
   children: MarkdownNode[];
 }
 
@@ -79,11 +80,30 @@ function convertAllTables(text: string) {
         );
       }
 
+/**
+ * Parse markdown heading syntax (e.g. "### Heading") and return the heading level (1-3) and content.
+ * Heading level is determined by the number of # characters (e.g. # = h1, ## = h2, ### = h3).
+ * Returns heading_level: 0 for non-heading content.
+ */
+function parseMarkdownHeadingLevel(text: string): { heading_level: number; content: string } {
+  const match = text.match(/^(#{1,3})\s+(.+)$/);
+  if (match) {
+    return {
+      heading_level: match[1].length,  // Number of # characters determines heading level
+      content: match[2].trim()
+    };
+  }
+  return {
+    heading_level: 0,  // Not a heading
+    content: text.trim()
+  };
+}
+
 function convertToRoamMarkdown(text: string): string {
-  // First handle double asterisks/underscores (bold)
+  // Handle double asterisks/underscores (bold)
   text = text.replace(/\*\*(.+?)\*\*/g, '**$1**');  // Preserve double asterisks
   
-  // Then handle single asterisks/underscores (italic)
+  // Handle single asterisks/underscores (italic)
   text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '__$1__');  // Single asterisk to double underscore
   text = text.replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '__$1__');        // Single underscore to double underscore
   
@@ -114,27 +134,31 @@ function parseMarkdown(markdown: string): MarkdownNode[] {
     const indentation = line.match(/^\s*/)?.[0].length ?? 0;
     let level = Math.floor(indentation / 2);
 
+    // First check for headings
+    const { heading_level, content: headingContent } = parseMarkdownHeadingLevel(trimmedLine);
     
-    // Extract content after bullet point or heading
-    let content = trimmedLine;
-    content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
-    if (trimmedLine.startsWith('#') || trimmedLine.includes('{{table}}') || (trimmedLine.startsWith('**') && trimmedLine.endsWith('**'))) {
-      // Remove bullet point if it precedes a table marker
-      // content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
-      level = 0;
-      // Reset stack but keep heading/table as parent
-      stack.length = 1;  // Keep only the heading/table
-    } else if (stack[0]?.content.startsWith('#') || stack[0]?.content.includes('{{table}}') || (stack[0]?.content.startsWith('**') && stack[0]?.content.endsWith('**'))) {
-      // If previous node was a heading or table marker or wrapped in double-asterisks, increase level by 1
-      level = Math.max(level, 1);
-      // Remove bullet point
-      // content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
-    } else {
-      // Remove bullet point
-      content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
+    // Then handle bullet points if not a heading
+    let content: string;
+    if (heading_level > 0) {
+      content = headingContent;  // Use clean heading content without # marks
+      level = 0;  // Headings start at root level
+      stack.length = 1;  // Reset stack but keep heading as parent
+      // Create heading node
+      const node: MarkdownNode = {
+        content,
+        level,
+        heading_level,  // Store heading level in node
+        children: []
+      };
+      rootNodes.push(node);
+      stack[0] = node;
+      continue;  // Skip to next line
     }
 
-    // Create new node
+    // Handle non-heading content
+    content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
+    
+    // Create regular node
     const node: MarkdownNode = {
       content,
       level,
@@ -223,6 +247,7 @@ function generateBlockUid(): string {
 interface BlockInfo {
   uid: string;
   content: string;
+  heading_level?: number;  // Optional heading level (1-3) for heading nodes
   children: BlockInfo[];
 }
 
@@ -230,6 +255,7 @@ function convertNodesToBlocks(nodes: MarkdownNode[]): BlockInfo[] {
   return nodes.map(node => ({
     uid: generateBlockUid(),
     content: node.content,
+    ...(node.heading_level && { heading_level: node.heading_level }),  // Preserve heading level if present
     children: convertNodesToBlocks(node.children)
   }));
 }
@@ -255,7 +281,8 @@ function convertToRoamActions(
         },
         block: {
           uid: block.uid,
-          string: block.content
+          string: block.content,
+          ...(block.heading_level && { heading: block.heading_level })
         }
       };
       
@@ -280,5 +307,6 @@ export {
   convertToRoamActions,
   hasMarkdownTable,
   convertAllTables,
-  convertToRoamMarkdown
+  convertToRoamMarkdown,
+  parseMarkdownHeadingLevel
 };
