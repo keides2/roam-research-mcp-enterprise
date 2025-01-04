@@ -35,62 +35,67 @@ export class HierarchySearchHandler extends BaseSearchHandler {
       targetPageUid = await SearchUtils.findPageByTitleOrUid(this.graph, page_title_uid);
     }
 
+    // Define ancestor rule for recursive traversal
+    const ancestorRule = `[
+      [ (ancestor ?child ?parent) 
+          [?parent :block/children ?child] ]
+      [ (ancestor ?child ?a) 
+          [?parent :block/children ?child] 
+          (ancestor ?parent ?a) ]
+    ]`;
+
     let queryStr: string;
     let queryParams: any[];
 
     if (parent_uid) {
-      // Search for children of a specific block
+      // Search for all descendants using ancestor rule
       if (targetPageUid) {
         queryStr = `[:find ?block-uid ?block-str ?depth
-                    :in $ ?parent-uid ?page-uid ?max-depth
+                    :in $ % ?parent-uid ?page-uid
                     :where [?p :block/uid ?page-uid]
                            [?parent :block/uid ?parent-uid]
-                           [?b :block/parents ?parent]
+                           (ancestor ?b ?parent)
                            [?b :block/string ?block-str]
                            [?b :block/uid ?block-uid]
                            [?b :block/page ?p]
-                           [(get-else $ ?b :block/path-length 1) ?depth]
-                           [(<= ?depth ?max-depth)]]`;
-        queryParams = [parent_uid, targetPageUid, max_depth];
+                           [(get-else $ ?b :block/path-length 1) ?depth]]`;
+        queryParams = [ancestorRule, parent_uid, targetPageUid];
       } else {
         queryStr = `[:find ?block-uid ?block-str ?page-title ?depth
-                    :in $ ?parent-uid ?max-depth
+                    :in $ % ?parent-uid
                     :where [?parent :block/uid ?parent-uid]
-                           [?b :block/parents ?parent]
+                           (ancestor ?b ?parent)
                            [?b :block/string ?block-str]
                            [?b :block/uid ?block-uid]
                            [?b :block/page ?p]
                            [?p :node/title ?page-title]
-                           [(get-else $ ?b :block/path-length 1) ?depth]
-                           [(<= ?depth ?max-depth)]]`;
-        queryParams = [parent_uid, max_depth];
+                           [(get-else $ ?b :block/path-length 1) ?depth]]`;
+        queryParams = [ancestorRule, parent_uid];
       }
     } else {
-      // Search for parents of a specific block
+      // Search for ancestors using the same rule
       if (targetPageUid) {
         queryStr = `[:find ?block-uid ?block-str ?depth
-                    :in $ ?child-uid ?page-uid ?max-depth
+                    :in $ % ?child-uid ?page-uid
                     :where [?p :block/uid ?page-uid]
                            [?child :block/uid ?child-uid]
-                           [?child :block/parents ?b]
+                           (ancestor ?child ?b)
                            [?b :block/string ?block-str]
                            [?b :block/uid ?block-uid]
                            [?b :block/page ?p]
-                           [(get-else $ ?b :block/path-length 1) ?depth]
-                           [(<= ?depth ?max-depth)]]`;
-        queryParams = [child_uid, targetPageUid, max_depth];
+                           [(get-else $ ?b :block/path-length 1) ?depth]]`;
+        queryParams = [ancestorRule, child_uid, targetPageUid];
       } else {
         queryStr = `[:find ?block-uid ?block-str ?page-title ?depth
-                    :in $ ?child-uid ?max-depth
+                    :in $ % ?child-uid
                     :where [?child :block/uid ?child-uid]
-                           [?child :block/parents ?b]
+                           (ancestor ?child ?b)
                            [?b :block/string ?block-str]
                            [?b :block/uid ?block-uid]
                            [?b :block/page ?p]
                            [?p :node/title ?page-title]
-                           [(get-else $ ?b :block/path-length 1) ?depth]
-                           [(<= ?depth ?max-depth)]]`;
-        queryParams = [child_uid, max_depth];
+                           [(get-else $ ?b :block/path-length 1) ?depth]]`;
+        queryParams = [ancestorRule, child_uid];
       }
     }
 
@@ -105,8 +110,8 @@ export class HierarchySearchHandler extends BaseSearchHandler {
     }));
 
     const searchDescription = parent_uid
-      ? `children of block ${parent_uid} (max depth: ${max_depth})`
-      : `parents of block ${child_uid} (max depth: ${max_depth})`;
+      ? `descendants of block ${parent_uid}`
+      : `ancestors of block ${child_uid}`;
 
     return {
       success: true,

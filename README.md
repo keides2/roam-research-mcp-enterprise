@@ -27,7 +27,7 @@ npm run build
 
 ## Features
 
-The server provides eight powerful tools for interacting with Roam Research:
+The server provides nine powerful tools for interacting with Roam Research:
 
 1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `roam_create_page`: Create new pages with optional content
@@ -37,6 +37,7 @@ The server provides eight powerful tools for interacting with Roam Research:
 6. `roam_create_outline`: Create hierarchical outlines with proper nesting and structure
 7. `roam_search_block_refs`: Search for block references within pages or across the graph
 8. `roam_search_hierarchy`: Navigate and search through block parent-child relationships
+9. `find_pages_modified_today`: Find all pages that have been modified since midnight today
 
 ## Setup
 
@@ -319,6 +320,32 @@ Returns:
     }
   ],
   "message": "Found N block(s) referencing..."
+}
+```
+
+### Find Pages Modified Today
+
+Find all pages that have been modified since midnight today:
+
+```typescript
+use_mcp_tool roam-research find_pages_modified_today {}
+```
+
+Features:
+
+- Tracks all modifications made to pages since midnight
+- Detects changes at any level in the block hierarchy
+- Returns unique list of modified page titles
+- Includes count of modified pages
+- No parameters required
+
+Returns:
+
+```json
+{
+  "success": true,
+  "pages": ["Page 1", "Page 2"],
+  "message": "Found 2 page(s) modified today"
 }
 ```
 

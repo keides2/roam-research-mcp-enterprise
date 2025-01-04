@@ -9,7 +9,7 @@ import {
 import { initializeGraph, type Graph } from '@roam-research/roam-api-sdk';
 import { API_TOKEN, GRAPH_NAME } from '../config/environment.js';
 import { toolSchemas } from '../tools/schemas.js';
-import { ToolHandlers } from '../tools/handlers.js';
+import { ToolHandlers } from '../tools/tool-handlers.js';
 import { TagSearchHandler, BlockRefSearchHandler, HierarchySearchHandler } from '../search/index.js';
 
 export class RoamServer {
@@ -28,7 +28,7 @@ export class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.12.1',
+        version: '0.15.0',
       },
       {
           capabilities: {
@@ -42,7 +42,8 @@ export class RoamServer {
               roam_search_for_tag: {},
               roam_search_by_status: {},
               roam_search_block_refs: {},
-              roam_search_hierarchy: {}
+              roam_search_hierarchy: {},
+              find_pages_modified_today: {}
             },
           },
       }
@@ -199,6 +200,13 @@ export class RoamServer {
             };
             const handler = new HierarchySearchHandler(this.graph, params);
             const result = await handler.execute();
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'find_pages_modified_today': {
+            const result = await this.toolHandlers.findPagesModifiedToday();
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };

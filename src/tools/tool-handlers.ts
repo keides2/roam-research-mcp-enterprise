@@ -1,13 +1,7 @@
-import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
-import { 
-  q, 
-  createPage, 
-  createBlock,
-  batchActions,
-} from '@roam-research/roam-api-sdk';
-import type { Graph, RoamCreateBlock } from '@roam-research/roam-api-sdk';
-import type { RoamBlock } from '../types/roam.js';
+import { Graph, q, createPage, createBlock, batchActions } from '@roam-research/roam-api-sdk';
+import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { formatRoamDate } from '../utils/helpers.js';
+import type { RoamBlock } from '../types/roam.js';
 import { 
   parseMarkdown, 
   convertToRoamActions,
@@ -76,10 +70,58 @@ const resolveRefs = async (graph: Graph, text: string, depth: number = 0): Promi
 };
 
 export class ToolHandlers {
-  private graph: Graph;
+  constructor(private graph: Graph) {}
 
-  constructor(graph: Graph) {
-    this.graph = graph;
+  async findPagesModifiedToday() {
+    // Define ancestor rule for traversing block hierarchy
+    const ancestorRule = `[
+      [ (ancestor ?b ?a)
+        [?a :block/children ?b] ]
+      [ (ancestor ?b ?a)
+        [?parent :block/children ?b]
+        (ancestor ?parent ?a) ]
+    ]`;
+
+    // Get start of today
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    try {
+      // Query for pages modified today
+      const results = await q(
+        this.graph,
+        `[:find ?title
+          :in $ ?start_of_day %
+          :where
+          [?page :node/title ?title]
+          (ancestor ?block ?page)
+          [?block :edit/time ?time]
+          [(> ?time ?start_of_day)]]`,
+        [startOfDay.getTime(), ancestorRule]
+      ) as [string][];
+
+      if (!results || results.length === 0) {
+        return {
+          success: true,
+          pages: [],
+          message: 'No pages have been modified today'
+        };
+      }
+
+      // Extract unique page titles
+      const uniquePages = [...new Set(results.map(([title]) => title))];
+
+      return {
+        success: true,
+        pages: uniquePages,
+        message: `Found ${uniquePages.length} page(s) modified today`
+      };
+    } catch (error: any) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to find modified pages: ${error.message}`
+      );
+    }
   }
 
   async createOutline(
@@ -868,16 +910,6 @@ export class ToolHandlers {
     let queryParams: any[];
 
     const statusPattern = `{{[[${status}]]}}`;
-
-    // Helper function to get parent block content
-    const getParentContent = async (blockUid: string): Promise<string | null> => {
-      const parentQuery = `[:find ?parent-str .
-                          :where [?b :block/uid "${blockUid}"]
-                                 [?b :block/parents ?parent]
-                                 [?parent :block/string ?parent-str]]`;
-      const result = await q(this.graph, parentQuery, []);
-      return result ? String(result) : null;
-    };
 
     if (targetPageUid) {
       queryStr = `[:find ?block-uid ?block-str
