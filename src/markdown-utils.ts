@@ -110,6 +110,10 @@ function convertToRoamMarkdown(text: string): string {
   // Handle highlights
   text = text.replace(/==(.+?)==/g, '^^$1^^');
   
+  // Convert tasks
+  text = text.replace(/- \[ \]/g, '- {{[[TODO]]}}');
+  text = text.replace(/- \[x\]/g, '- {{[[DONE]]}}');
+  
   // Convert tables
   text = convertAllTables(text);
   
@@ -117,14 +121,108 @@ function convertToRoamMarkdown(text: string): string {
 }
 
 function parseMarkdown(markdown: string): MarkdownNode[] {
+  // Convert markdown syntax first
+  markdown = convertToRoamMarkdown(markdown);
+  
   const lines = markdown.split('\n');
   const rootNodes: MarkdownNode[] = [];
   const stack: MarkdownNode[] = [];
+  let inCodeBlock = false;
+  let codeBlockContent = '';
+  let codeBlockIndentation = 0;
+  let codeBlockParentLevel = 0;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmedLine = line.trimEnd();
     
+    // Handle code blocks
+    if (trimmedLine.match(/^(\s*)```/)) {
+      if (!inCodeBlock) {
+        // Start of code block
+        inCodeBlock = true;
+        // Store the opening backticks without indentation
+        codeBlockContent = trimmedLine.trimStart() + '\n';
+        codeBlockIndentation = line.match(/^\s*/)?.[0].length ?? 0;
+        // Save current parent level
+        codeBlockParentLevel = stack.length;
+      } else {
+        // End of code block
+        inCodeBlock = false;
+        // Add closing backticks without indentation
+        codeBlockContent += trimmedLine.trimStart();
+        
+        // Process the code block content to fix indentation
+        const lines = codeBlockContent.split('\n');
+        
+        // Find the first non-empty code line to determine base indentation
+        let baseIndentation = '';
+        let codeStartIndex = -1;
+        for (let i = 1; i < lines.length - 1; i++) {
+          const line = lines[i];
+          if (line.trim().length > 0) {
+            const indentMatch = line.match(/^[\t ]*/);
+            if (indentMatch) {
+              baseIndentation = indentMatch[0];
+              codeStartIndex = i;
+              break;
+            }
+          }
+        }
+
+        // Process lines maintaining relative indentation from the first code line
+        const processedLines = lines.map((line, index) => {
+          // Keep backticks as is
+          if (index === 0 || index === lines.length - 1) return line.trimStart();
+          
+          // Empty lines should be completely trimmed
+          if (line.trim().length === 0) return '';
+          
+          // For code lines, remove only the base indentation
+          if (line.startsWith(baseIndentation)) {
+            return line.slice(baseIndentation.length);
+          }
+          // If line has less indentation than base, trim all leading whitespace
+          return line.trimStart();
+        });
+        
+        // Create node for the entire code block
+        const level = Math.floor(codeBlockIndentation / 2);
+        const node: MarkdownNode = {
+          content: processedLines.join('\n'),
+          level,
+          children: []
+        };
+
+        // Restore to code block's parent level
+        while (stack.length > codeBlockParentLevel) {
+          stack.pop();
+        }
+        if (level === 0) {
+          rootNodes.push(node);
+          stack[0] = node;
+        } else {
+          while (stack.length > level) {
+            stack.pop();
+          }
+          if (stack[level - 1]) {
+            stack[level - 1].children.push(node);
+          } else {
+            rootNodes.push(node);
+          }
+          stack[level] = node;
+        }
+        
+        codeBlockContent = '';
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeBlockContent += line + '\n';
+      continue;
+    }
+
     // Skip truly empty lines (no spaces)
     if (trimmedLine === '') {
       continue;
@@ -156,7 +254,14 @@ function parseMarkdown(markdown: string): MarkdownNode[] {
     }
 
     // Handle non-heading content
-    content = trimmedLine.replace(/^\s*[-*+]\s+/, '');
+    const bulletMatch = trimmedLine.match(/^(\s*)[-*+]\s+/);
+    if (bulletMatch) {
+      // For bullet points, use the bullet's indentation for level
+      content = trimmedLine.substring(bulletMatch[0].length);
+      level = Math.floor(bulletMatch[1].length / 2);
+    } else {
+      content = trimmedLine;
+    }
     
     // Create regular node
     const node: MarkdownNode = {
@@ -165,25 +270,19 @@ function parseMarkdown(markdown: string): MarkdownNode[] {
       children: []
     };
 
-    // Find the appropriate parent for this node based on level
-    if (level === 0) {
+    // Pop stack until we find the parent level
+    while (stack.length > level) {
+      stack.pop();
+    }
+    
+    // Add to appropriate parent
+    if (level === 0 || !stack[level - 1]) {
       rootNodes.push(node);
       stack[0] = node;
     } else {
-      // Pop stack until we find the parent level
-      while (stack.length > level) {
-        stack.pop();
-      }
-      
-      // Add as child to parent
-      if (stack[level - 1]) {
-        stack[level - 1].children.push(node);
-      } else {
-        // If no parent found, treat as root node
-        rootNodes.push(node);
-      }
-      stack[level] = node;
+      stack[level - 1].children.push(node);
     }
+    stack[level] = node;
   }
 
   return rootNodes;
@@ -265,8 +364,8 @@ function convertToRoamActions(
   parentUid: string,
   order: 'first' | 'last' | number = 'last'
 ): BatchAction[] {
-  // First convert nodes to blocks with UIDs
-  const blocks = convertNodesToBlocks(nodes);
+  // First convert nodes to blocks with UIDs, reversing to maintain original order
+  const blocks = convertNodesToBlocks([...nodes].reverse());
   const actions: BatchAction[] = [];
 
   // Helper function to recursively create actions

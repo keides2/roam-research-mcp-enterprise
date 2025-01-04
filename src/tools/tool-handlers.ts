@@ -423,7 +423,7 @@ export class ToolHandlers {
     };
   }
 
-  async fetchPageByTitle(title: string) {
+  async fetchPageByTitle(title: string): Promise<string> {
     if (!title) {
       throw new McpError(
         ErrorCode.InvalidRequest,
@@ -455,81 +455,90 @@ export class ToolHandlers {
       );
     }
 
-    // Get all blocks under this page with their order and parent relationships
+    // Define ancestor rule for traversing block hierarchy
+    const ancestorRule = `[
+      [ (ancestor ?b ?a)
+        [?a :block/children ?b] ]
+      [ (ancestor ?b ?a)
+        [?parent :block/children ?b]
+        (ancestor ?parent ?a) ]
+    ]`;
+
+    // Get all blocks under this page using ancestor rule
     const blocksQuery = `[:find ?block-uid ?block-str ?order ?parent-uid
-                        :where [?p :block/uid "${uid}"]
-                               [?b :block/page ?p]
-                               [?b :block/uid ?block-uid]
-                               [?b :block/string ?block-str]
-                               [?b :block/order ?order]
-                               [?b :block/parents ?parent]
+                        :in $ % ?page-title
+                        :where [?page :node/title ?page-title]
+                               [?block :block/string ?block-str]
+                               [?block :block/uid ?block-uid]
+                               [?block :block/order ?order]
+                               (ancestor ?block ?page)
+                               [?parent :block/children ?block]
                                [?parent :block/uid ?parent-uid]]`;
-    const blocks = await q(this.graph, blocksQuery, []);
+    const blocks = await q(this.graph, blocksQuery, [ancestorRule, title]);
 
-    if (blocks.length > 0) {
-      const blockMap = new Map<string, RoamBlock>();
-      for (const [uid, string, order] of blocks) {
-        if (!blockMap.has(uid)) {
-          const resolvedString = await resolveRefs(this.graph, string);
-          blockMap.set(uid, {
-            uid,
-            string: resolvedString,
-            order: order as number,
-            children: []
-          });
-        }
+    if (!blocks || blocks.length === 0) {
+      return `${title} (no content found)`;
+    }
+
+    // Create a map of all blocks
+    const blockMap = new Map<string, RoamBlock>();
+    const rootBlocks: RoamBlock[] = [];
+
+    // First pass: Create all block objects
+    for (const [blockUid, blockStr, order, parentUid] of blocks) {
+      const resolvedString = await resolveRefs(this.graph, blockStr);
+      const block = {
+        uid: blockUid,
+        string: resolvedString,
+        order: order as number,
+        children: []
+      };
+      blockMap.set(blockUid, block);
+      
+      // If no parent or parent is the page itself, it's a root block
+      if (!parentUid || parentUid === uid) {
+        rootBlocks.push(block);
       }
+    }
 
-      // Build parent-child relationships
-      blocks.forEach(([childUid, _, __, parentUid]) => {
-        const child = blockMap.get(childUid);
+    // Second pass: Build parent-child relationships
+    for (const [blockUid, _, __, parentUid] of blocks) {
+      if (parentUid && parentUid !== uid) {
+        const child = blockMap.get(blockUid);
         const parent = blockMap.get(parentUid);
         if (child && parent && !parent.children.includes(child)) {
           parent.children.push(child);
         }
-      });
-
-      // Get top-level blocks
-      const topQuery = `[:find ?block-uid ?block-str ?order
-                       :where [?p :block/uid "${uid}"]
-                              [?b :block/page ?p]
-                              [?b :block/uid ?block-uid]
-                              [?b :block/string ?block-str]
-                              [?b :block/order ?order]
-                              (not-join [?b]
-                                [?b :block/parents ?parent]
-                                [?parent :block/page ?p])]`;
-      const topBlocks = await q(this.graph, topQuery, []);
-
-      // Create root blocks
-      const rootBlocks = topBlocks
-        .map(([uid, string, order]) => ({
-          uid,
-          string,
-          order: order as number,
-          children: blockMap.get(uid)?.children || []
-        }))
-        .sort((a, b) => a.order - b.order);
-
-      // Convert to markdown
-      const toMarkdown = (blocks: RoamBlock[], level: number = 0): string => {
-        return blocks.map(block => {
-          const indent = '  '.repeat(level);
-          let md = `${indent}- ${block.string}\n`;
-          if (block.children.length > 0) {
-            md += toMarkdown(block.children.sort((a, b) => a.order - b.order), level + 1);
-          }
-          return md;
-        }).join('');
-      };
-
-      return `# ${title}\n\n${toMarkdown(rootBlocks)}`;
+      }
     }
 
-    return `${title} (no content found)`;
+    // Sort blocks recursively
+    const sortBlocks = (blocks: RoamBlock[]) => {
+      blocks.sort((a, b) => a.order - b.order);
+      blocks.forEach(block => {
+        if (block.children.length > 0) {
+          sortBlocks(block.children);
+        }
+      });
+    };
+    sortBlocks(rootBlocks);
+
+    // Convert to markdown with proper nesting
+    const toMarkdown = (blocks: RoamBlock[], level: number = 0): string => {
+      return blocks.map(block => {
+        const indent = '  '.repeat(level);
+        let md = `${indent}- ${block.string}`;
+        if (block.children.length > 0) {
+          md += '\n' + toMarkdown(block.children, level + 1);
+        }
+        return md;
+      }).join('\n');
+    };
+
+    return `# ${title}\n\n${toMarkdown(rootBlocks)}`;
   }
 
-  async createPage(title: string, content?: string) {
+  async createPage(title: string, content?: string): Promise<{ success: boolean; uid: string }> {
     // Ensure title is properly formatted
     const pageTitle = String(title).trim();
     
@@ -601,7 +610,7 @@ export class ToolHandlers {
     return { success: true, uid: pageUid };
   }
 
-  async createBlock(content: string, page_uid?: string, title?: string) {
+  async createBlock(content: string, page_uid?: string, title?: string): Promise<{ success: boolean; block_uid?: string; parent_uid: string }> {
     // If page_uid provided, use it directly
     let targetPageUid = page_uid;
     
@@ -730,7 +739,7 @@ export class ToolHandlers {
     parent_uid?: string,
     parent_string?: string,
     order: 'first' | 'last' = 'first'
-  ) {
+  ): Promise<{ success: boolean; page_uid: string; parent_uid: string; created_uids?: string[] }> {
     // First get the page UID
     let targetPageUid = page_uid;
     
@@ -880,7 +889,7 @@ export class ToolHandlers {
     page_title_uid?: string,
     include?: string,
     exclude?: string
-  ) {
+  ): Promise<{ success: boolean; matches: Array<{ block_uid: string; content: string; page_title?: string }>; message: string }> {
     // Get target page UID if provided
     let targetPageUid: string | undefined;
     if (page_title_uid) {
@@ -980,7 +989,7 @@ export class ToolHandlers {
     };
   }
 
-  async searchForTag(primary_tag: string, page_title_uid?: string, near_tag?: string) {
+  async searchForTag(primary_tag: string, page_title_uid?: string, near_tag?: string): Promise<{ success: boolean; matches: Array<{ block_uid: string; content: string; page_title?: string }>; message: string }> {
     // Ensure tags are properly formatted with #
     const formatTag = (tag: string) => tag.startsWith('#') ? tag : `#${tag}`;
     const primaryTagFormatted = formatTag(primary_tag);
@@ -1083,7 +1092,7 @@ export class ToolHandlers {
     };
   }
 
-  async addTodos(todos: string[]) {
+  async addTodos(todos: string[]): Promise<{ success: boolean }> {
     if (!Array.isArray(todos) || todos.length === 0) {
       throw new McpError(
         ErrorCode.InvalidRequest,
