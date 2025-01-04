@@ -73,8 +73,8 @@ export const toolSchemas = {
     },
   },
   roam_create_outline: {
-    name: 'roam_create_outline',
-    description: 'Create a structured outline in Roam from an array of outline items with explicit levels. Can be added under a specific page or block.',
+    name: 'roam_create_output_with_nested_structure',
+    description: 'Create a structured outline or output with nested structure in Roam from an array of items with explicit levels. Can be added on a specific page or under a specific block.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -144,4 +144,101 @@ export const toolSchemas = {
       required: ['content']
     }
   },
+  roam_search_for_tag: {
+    name: 'roam_search_for_tag',
+    description: 'Search for blocks containing a specific tag and optionally filter by blocks that also contain another tag nearby.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        primary_tag: {
+          type: 'string',
+          description: 'The main tag to search for (without the [[ ]] brackets)',
+        },
+        page_title_uid: {
+          type: 'string',
+          description: 'Optional: Title or UID of the page to search in. Defaults to today\'s daily page if not provided',
+        },
+        near_tag: {
+          type: 'string',
+          description: 'Optional: Another tag to filter results by - will only return blocks where both tags appear',
+        }
+      },
+      required: ['primary_tag']
+    }
+  },
+  roam_search_by_status: {
+    name: 'roam_search_by_status',
+    description: 'Search for blocks with a specific status (TODO/DONE) across all pages or within a specific page.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          description: 'Status to search for (TODO or DONE)',
+          enum: ['TODO', 'DONE']
+        },
+        page_title_uid: {
+          type: 'string',
+          description: 'Optional: Title or UID of the page to search in. If not provided, searches across all pages'
+        },
+        include: {
+          type: 'string',
+          description: 'Optional: Comma-separated list of terms to filter results by inclusion (matches content or page title)'
+        },
+        exclude: {
+          type: 'string',
+          description: 'Optional: Comma-separated list of terms to filter results by exclusion (matches content or page title)'
+        }
+      },
+      required: ['status']
+    }
+  },
+  roam_search_block_refs: {
+    name: 'roam_search_block_refs',
+    description: 'Search for block references within a page or across the entire graph. Can search for references to a specific block or find all block references.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        block_uid: {
+          type: 'string',
+          description: 'Optional: UID of the block to find references to'
+        },
+        page_title_uid: {
+          type: 'string',
+          description: 'Optional: Title or UID of the page to search in. If not provided, searches across all pages'
+        }
+      }
+    }
+  },
+  roam_search_hierarchy: {
+    name: 'roam_search_hierarchy',
+    description: 'Search for parent or child blocks in the block hierarchy. Can search up or down the hierarchy from a given block.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        parent_uid: {
+          type: 'string',
+          description: 'Optional: UID of the block to find children of'
+        },
+        child_uid: {
+          type: 'string',
+          description: 'Optional: UID of the block to find parents of'
+        },
+        page_title_uid: {
+          type: 'string',
+          description: 'Optional: Title or UID of the page to search in'
+        },
+        max_depth: {
+          type: 'integer',
+          description: 'Optional: How many levels deep to search (default: 1)',
+          minimum: 1,
+          maximum: 10
+        }
+      },
+      oneOf: [
+        { required: ['parent_uid'] },
+        { required: ['child_uid'] }
+      ]
+    }
+  }
 };

@@ -27,7 +27,7 @@ npm run build
 
 ## Features
 
-The server provides six powerful tools for interacting with Roam Research:
+The server provides eight powerful tools for interacting with Roam Research:
 
 1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `roam_create_page`: Create new pages with optional content
@@ -35,6 +35,8 @@ The server provides six powerful tools for interacting with Roam Research:
 4. `roam_import_markdown`: Import nested markdown content under specific blocks
 5. `roam_add_todo`: Add multiple todo items to today's daily page with checkbox syntax
 6. `roam_create_outline`: Create hierarchical outlines with proper nesting and structure
+7. `roam_search_block_refs`: Search for block references within pages or across the graph
+8. `roam_search_hierarchy`: Navigate and search through block parent-child relationships
 
 ## Setup
 
@@ -279,6 +281,92 @@ Parameters:
 - `parent_uid`: UID of the parent block to add content under
 - `parent_string`: Exact string content of the parent block (must provide either page_uid or page_title)
 - `order`: Where to add the content ("first" or "last", defaults to "first")
+
+### Search Block References
+
+Search for block references within pages or across the entire graph:
+
+```typescript
+use_mcp_tool roam-research roam_search_block_refs {
+  "block_uid": "optional-block-uid",
+  "page_title_uid": "optional-page-title-or-uid"
+}
+```
+
+Features:
+
+- Find all references to a specific block
+- Search for any block references within a page
+- Search across the entire graph
+- Supports both direct and indirect references
+- Includes block content and location context
+
+Parameters:
+
+- `block_uid`: UID of the block to find references to (optional)
+- `page_title_uid`: Title or UID of the page to search in (optional)
+
+Returns:
+
+```json
+{
+  "success": true,
+  "matches": [
+    {
+      "block_uid": "referenced-block-uid",
+      "content": "Block content with ((reference))",
+      "page_title": "Page containing reference"
+    }
+  ],
+  "message": "Found N block(s) referencing..."
+}
+```
+
+### Search Block Hierarchy
+
+Navigate and search through block parent-child relationships:
+
+```typescript
+use_mcp_tool roam-research roam_search_hierarchy {
+  "parent_uid": "optional-parent-block-uid",
+  "child_uid": "optional-child-block-uid",
+  "page_title_uid": "optional-page-title-or-uid",
+  "max_depth": 3
+}
+```
+
+Features:
+
+- Search up or down the block hierarchy
+- Find children of a specific block
+- Find parents of a specific block
+- Configure search depth (1-10 levels)
+- Optional page scope filtering
+- Includes depth information for each result
+
+Parameters:
+
+- `parent_uid`: UID of the block to find children of (required if searching down)
+- `child_uid`: UID of the block to find parents of (required if searching up)
+- `page_title_uid`: Title or UID of the page to search in (optional)
+- `max_depth`: How many levels deep to search (optional, default: 1, max: 10)
+
+Returns:
+
+```json
+{
+  "success": true,
+  "matches": [
+    {
+      "block_uid": "related-block-uid",
+      "content": "Block content",
+      "depth": 2,
+      "page_title": "Page containing block"
+    }
+  ],
+  "message": "Found N block(s) as children/parents..."
+}
+```
 
 ## Error Handling
 

@@ -833,6 +833,224 @@ export class ToolHandlers {
     }
   }
 
+  async searchByStatus(
+    status: 'TODO' | 'DONE', 
+    page_title_uid?: string,
+    include?: string,
+    exclude?: string
+  ) {
+    // Get target page UID if provided
+    let targetPageUid: string | undefined;
+    if (page_title_uid) {
+      // Try to find page by title or UID
+      const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
+      const findResults = await q(this.graph, findQuery, [page_title_uid]) as [string][];
+      
+      if (findResults && findResults.length > 0) {
+        targetPageUid = findResults[0][0];
+      } else {
+        // Try as UID
+        const uidQuery = `[:find ?uid :where [?e :block/uid "${page_title_uid}"] [?e :block/uid ?uid]]`;
+        const uidResults = await q(this.graph, uidQuery, []) as [string][];
+        
+        if (!uidResults || uidResults.length === 0) {
+          throw new McpError(
+            ErrorCode.InvalidRequest,
+            `Page with title/UID "${page_title_uid}" not found`
+          );
+        }
+        targetPageUid = uidResults[0][0];
+      }
+    }
+
+    // Build query based on whether we're searching in a specific page
+    let queryStr: string;
+    let queryParams: any[];
+
+    const statusPattern = `{{[[${status}]]}}`;
+
+    // Helper function to get parent block content
+    const getParentContent = async (blockUid: string): Promise<string | null> => {
+      const parentQuery = `[:find ?parent-str .
+                          :where [?b :block/uid "${blockUid}"]
+                                 [?b :block/parents ?parent]
+                                 [?parent :block/string ?parent-str]]`;
+      const result = await q(this.graph, parentQuery, []);
+      return result ? String(result) : null;
+    };
+
+    if (targetPageUid) {
+      queryStr = `[:find ?block-uid ?block-str
+                  :in $ ?status-pattern ?page-uid
+                  :where [?p :block/uid ?page-uid]
+                         [?b :block/page ?p]
+                         [?b :block/string ?block-str]
+                         [?b :block/uid ?block-uid]
+                         [(clojure.string/includes? ?block-str ?status-pattern)]]`;
+      queryParams = [statusPattern, targetPageUid];
+    } else {
+      queryStr = `[:find ?block-uid ?block-str ?page-title
+                  :in $ ?status-pattern
+                  :where [?b :block/string ?block-str]
+                         [?b :block/uid ?block-uid]
+                         [?b :block/page ?p]
+                         [?p :node/title ?page-title]
+                         [(clojure.string/includes? ?block-str ?status-pattern)]]`;
+      queryParams = [statusPattern];
+    }
+
+    type QueryResult = [string, string, string?];
+    const results = await q(this.graph, queryStr, queryParams) as QueryResult[];
+
+    if (!results || results.length === 0) {
+      return {
+        success: true,
+        matches: [],
+        message: `No blocks found with status ${status}`
+      };
+    }
+
+    // Format initial results
+    let matches = results.map(result => {
+      const [uid, content, pageTitle] = result;
+      return {
+        block_uid: uid,
+        content,
+        ...(pageTitle && { page_title: pageTitle })
+      };
+    });
+
+    // Post-query filtering
+    if (include) {
+      const includeTerms = include.toLowerCase().split(',').map(term => term.trim());
+      matches = matches.filter(match => 
+        includeTerms.some(term => 
+          match.content.toLowerCase().includes(term) || 
+          (match.page_title && match.page_title.toLowerCase().includes(term))
+        )
+      );
+    }
+
+    if (exclude) {
+      const excludeTerms = exclude.toLowerCase().split(',').map(term => term.trim());
+      matches = matches.filter(match => 
+        !excludeTerms.some(term => 
+          match.content.toLowerCase().includes(term) || 
+          (match.page_title && match.page_title.toLowerCase().includes(term))
+        )
+      );
+    }
+
+    return {
+      success: true,
+      matches,
+      message: `Found ${matches.length} block(s) with status ${status}${include ? ` including "${include}"` : ''}${exclude ? ` excluding "${exclude}"` : ''}`
+    };
+  }
+
+  async searchForTag(primary_tag: string, page_title_uid?: string, near_tag?: string) {
+    // Ensure tags are properly formatted with #
+    const formatTag = (tag: string) => tag.startsWith('#') ? tag : `#${tag}`;
+    const primaryTagFormatted = formatTag(primary_tag);
+    const nearTagFormatted = near_tag ? formatTag(near_tag) : undefined;
+
+    // Get target page UID if provided
+    let targetPageUid: string | undefined;
+    if (page_title_uid) {
+      // Try to find page by title or UID
+      const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
+      const findResults = await q(this.graph, findQuery, [page_title_uid]) as [string][];
+      
+      if (findResults && findResults.length > 0) {
+        targetPageUid = findResults[0][0];
+      } else {
+        // Try as UID
+        const uidQuery = `[:find ?uid :where [?e :block/uid "${page_title_uid}"] [?e :block/uid ?uid]]`;
+        const uidResults = await q(this.graph, uidQuery, []) as [string][];
+        
+        if (!uidResults || uidResults.length === 0) {
+          throw new McpError(
+            ErrorCode.InvalidRequest,
+            `Page with title/UID "${page_title_uid}" not found`
+          );
+        }
+        targetPageUid = uidResults[0][0];
+      }
+    }
+
+    // Build query based on whether we're searching in a specific page and/or for a nearby tag
+    let queryStr: string;
+    let queryParams: any[];
+
+    if (targetPageUid) {
+      if (nearTagFormatted) {
+        queryStr = `[:find ?block-uid ?block-str
+                    :in $ ?primary-tag ?near-tag ?page-uid
+                    :where [?p :block/uid ?page-uid]
+                           [?b :block/page ?p]
+                           [?b :block/string ?block-str]
+                           [?b :block/uid ?block-uid]
+                           [(clojure.string/includes? ?block-str ?primary-tag)]
+                           [(clojure.string/includes? ?block-str ?near-tag)]]`;
+        queryParams = [primaryTagFormatted, nearTagFormatted, targetPageUid];
+      } else {
+        queryStr = `[:find ?block-uid ?block-str
+                    :in $ ?primary-tag ?page-uid
+                    :where [?p :block/uid ?page-uid]
+                           [?b :block/page ?p]
+                           [?b :block/string ?block-str]
+                           [?b :block/uid ?block-uid]
+                           [(clojure.string/includes? ?block-str ?primary-tag)]]`;
+        queryParams = [primaryTagFormatted, targetPageUid];
+      }
+    } else {
+      // Search across all pages
+      if (nearTagFormatted) {
+        queryStr = `[:find ?block-uid ?block-str ?page-title
+                    :in $ ?primary-tag ?near-tag
+                    :where [?b :block/string ?block-str]
+                           [?b :block/uid ?block-uid]
+                           [?b :block/page ?p]
+                           [?p :node/title ?page-title]
+                           [(clojure.string/includes? ?block-str ?primary-tag)]
+                           [(clojure.string/includes? ?block-str ?near-tag)]]`;
+        queryParams = [primaryTagFormatted, nearTagFormatted];
+      } else {
+        queryStr = `[:find ?block-uid ?block-str ?page-title
+                    :in $ ?primary-tag
+                    :where [?b :block/string ?block-str]
+                           [?b :block/uid ?block-uid]
+                           [?b :block/page ?p]
+                           [?p :node/title ?page-title]
+                           [(clojure.string/includes? ?block-str ?primary-tag)]]`;
+        queryParams = [primaryTagFormatted];
+      }
+    }
+
+    const results = await q(this.graph, queryStr, queryParams) as [string, string, string?][];
+
+    if (!results || results.length === 0) {
+      return {
+        success: true,
+        matches: [],
+        message: `No blocks found containing ${primaryTagFormatted}${nearTagFormatted ? ` near ${nearTagFormatted}` : ''}`
+      };
+    }
+
+    // Format results
+    const matches = results.map(([uid, content, pageTitle]) => ({
+      block_uid: uid,
+      content,
+      ...(pageTitle && { page_title: pageTitle })
+    }));
+
+    return {
+      success: true,
+      matches,
+      message: `Found ${matches.length} block(s) containing ${primaryTagFormatted}${nearTagFormatted ? ` near ${nearTagFormatted}` : ''}`
+    };
+  }
+
   async addTodos(todos: string[]) {
     if (!Array.isArray(todos) || todos.length === 0) {
       throw new McpError(

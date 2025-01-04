@@ -6,22 +6,24 @@ import {
   ListToolsRequestSchema,
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
-import { initializeGraph } from '@roam-research/roam-api-sdk';
+import { initializeGraph, type Graph } from '@roam-research/roam-api-sdk';
 import { API_TOKEN, GRAPH_NAME } from '../config/environment.js';
 import { toolSchemas } from '../tools/schemas.js';
 import { ToolHandlers } from '../tools/handlers.js';
+import { TagSearchHandler, BlockRefSearchHandler, HierarchySearchHandler } from '../search/index.js';
 
 export class RoamServer {
   private server: Server;
   private toolHandlers: ToolHandlers;
+  private graph: Graph;
 
   constructor() {
-    const graph = initializeGraph({
+    this.graph = initializeGraph({
       token: API_TOKEN,
       graph: GRAPH_NAME,
     });
 
-    this.toolHandlers = new ToolHandlers(graph);
+    this.toolHandlers = new ToolHandlers(this.graph);
     
     this.server = new Server(
       {
@@ -29,16 +31,20 @@ export class RoamServer {
         version: '0.12.1',
       },
       {
-        capabilities: {
-          tools: {
-            roam_add_todo: {},
-            roam_fetch_page_by_title: {},
-            roam_create_page: {},
-            roam_create_block: {},
-            roam_import_markdown: {},
-            roam_create_outline: {}
+          capabilities: {
+            tools: {
+              roam_add_todo: {},
+              roam_fetch_page_by_title: {},
+              roam_create_page: {},
+              roam_create_block: {},
+              roam_import_markdown: {},
+              roam_create_outline: {},
+              roam_search_for_tag: {},
+              roam_search_by_status: {},
+              roam_search_block_refs: {},
+              roam_search_hierarchy: {}
+            },
           },
-        },
       }
     );
 
@@ -141,6 +147,58 @@ export class RoamServer {
               page_title_uid,
               block_text_uid
             );
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_search_for_tag': {
+            const params = request.params.arguments as {
+              primary_tag: string;
+              page_title_uid?: string;
+              near_tag?: string;
+            };
+            const handler = new TagSearchHandler(this.graph, params);
+            const result = await handler.execute();
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_search_by_status': {
+            const { status, page_title_uid, include, exclude } = request.params.arguments as {
+              status: 'TODO' | 'DONE';
+              page_title_uid?: string;
+              include?: string;
+              exclude?: string;
+            };
+            const result = await this.toolHandlers.searchByStatus(status, page_title_uid, include, exclude);
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_search_block_refs': {
+            const params = request.params.arguments as {
+              block_uid?: string;
+              page_title_uid?: string;
+            };
+            const handler = new BlockRefSearchHandler(this.graph, params);
+            const result = await handler.execute();
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_search_hierarchy': {
+            const params = request.params.arguments as {
+              parent_uid?: string;
+              child_uid?: string;
+              page_title_uid?: string;
+              max_depth?: number;
+            };
+            const handler = new HierarchySearchHandler(this.graph, params);
+            const result = await handler.execute();
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };
