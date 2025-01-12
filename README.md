@@ -27,7 +27,7 @@ npm run build
 
 ## Features
 
-The server provides ten powerful tools for interacting with Roam Research:
+The server provides eleven powerful tools for interacting with Roam Research:
 
 1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `roam_create_page`: Create new pages with optional content
@@ -39,6 +39,7 @@ The server provides ten powerful tools for interacting with Roam Research:
 8. `roam_search_hierarchy`: Navigate and search through block parent-child relationships
 9. `find_pages_modified_today`: Find all pages that have been modified since midnight today
 10. `roam_search_by_text`: Search for blocks containing specific text across all pages or within a specific page
+11. `roam_update_block`: Update block content with direct text or pattern-based transformations
 
 ## Setup
 
@@ -363,6 +364,58 @@ Returns:
     }
   ],
   "message": "Found N block(s) containing \"search text\""
+}
+```
+
+### Update Block Content
+
+Update a block's content using either direct text replacement or pattern-based transformations:
+
+```typescript
+use_mcp_tool roam-research roam_update_block {
+  "block_uid": "target-block-uid",
+  "content": "New block content"
+}
+```
+
+Or use pattern-based transformation:
+
+```typescript
+use_mcp_tool roam-research roam_update_block {
+  "block_uid": "target-block-uid",
+  "transform_pattern": {
+    "find": "\\bPython\\b",
+    "replace": "[[Python]]",
+    "global": true
+  }
+}
+```
+
+Features:
+
+- Two update modes:
+  - Direct content replacement
+  - Pattern-based transformation using regex
+- Verify block existence before updating
+- Return updated content in response
+- Support for global or single-match replacements
+- Preserve block relationships and metadata
+
+Parameters:
+
+- `block_uid`: UID of the block to update (required)
+- `content`: New content for the block (if using direct replacement)
+- `transform_pattern`: Pattern for transforming existing content:
+  - `find`: Text or regex pattern to find
+  - `replace`: Text to replace with
+  - `global`: Whether to replace all occurrences (default: true)
+
+Returns:
+
+```json
+{
+  "success": true,
+  "content": "Updated block content"
 }
 ```
 

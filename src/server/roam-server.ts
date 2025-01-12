@@ -44,7 +44,8 @@ export class RoamServer {
               roam_search_block_refs: {},
               roam_search_hierarchy: {},
               find_pages_modified_today: {},
-              roam_search_by_text: {}
+              roam_search_by_text: {},
+              roam_update_block: {}
             },
           },
       }
@@ -221,6 +222,35 @@ export class RoamServer {
             };
             const handler = new TextSearchHandler(this.graph, params);
             const result = await handler.execute();
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_update_block': {
+            const { block_uid, content, transform_pattern } = request.params.arguments as {
+              block_uid: string;
+              content?: string;
+              transform_pattern?: {
+                find: string;
+                replace: string;
+                global?: boolean;
+              };
+            };
+
+            let result;
+            if (content) {
+              result = await this.toolHandlers.updateBlock(block_uid, content);
+            } else if (transform_pattern) {
+              result = await this.toolHandlers.updateBlock(
+                block_uid,
+                undefined,
+                (currentContent: string) => {
+                  const regex = new RegExp(transform_pattern.find, transform_pattern.global !== false ? 'g' : '');
+                  return currentContent.replace(regex, transform_pattern.replace);
+                }
+              );
+            }
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };

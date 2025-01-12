@@ -271,5 +271,47 @@ export const toolSchemas = {
       },
       required: ['text']
     }
+  },
+  roam_update_block: {
+    name: 'roam_update_block',
+    description: 'Update the content of an existing block identified by its UID. Can either provide new content directly or use a transform pattern to modify existing content.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        block_uid: {
+          type: 'string',
+          description: 'UID of the block to update'
+        },
+        content: {
+          type: 'string',
+          description: 'New content for the block. If not provided, transform_pattern will be used.'
+        },
+        transform_pattern: {
+          type: 'object',
+          description: 'Pattern to transform the current content. Used if content is not provided.',
+          properties: {
+            find: {
+              type: 'string',
+              description: 'Text or regex pattern to find'
+            },
+            replace: {
+              type: 'string',
+              description: 'Text to replace with'
+            },
+            global: {
+              type: 'boolean',
+              description: 'Whether to replace all occurrences',
+              default: true
+            }
+          },
+          required: ['find', 'replace']
+        }
+      },
+      required: ['block_uid'],
+      oneOf: [
+        { required: ['content'] },
+        { required: ['transform_pattern'] }
+      ]
+    }
   }
 };

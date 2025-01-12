@@ -1,4 +1,4 @@
-import { Graph, q, createPage, createBlock, batchActions } from '@roam-research/roam-api-sdk';
+import { Graph, q, createPage, createBlock, batchActions, updateBlock } from '@roam-research/roam-api-sdk';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { formatRoamDate } from '../utils/helpers.js';
 import type { RoamBlock } from '../types/roam.js';
@@ -881,6 +881,72 @@ export class ToolHandlers {
         page_uid: targetPageUid,
         parent_uid: targetParentUid
       };
+    }
+  }
+
+  async updateBlock(block_uid: string, content?: string, transform?: (currentContent: string) => string): Promise<{ success: boolean; content: string }> {
+    if (!block_uid) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        'block_uid is required'
+      );
+    }
+
+    // Get current block content
+    const blockQuery = `[:find ?string .
+                        :where [?b :block/uid "${block_uid}"]
+                               [?b :block/string ?string]]`;
+    const result = await q(this.graph, blockQuery, []);
+    if (result === null || result === undefined) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        `Block with UID "${block_uid}" not found`
+      );
+    }
+    const currentContent = String(result);
+    
+    if (currentContent === null || currentContent === undefined) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        `Block with UID "${block_uid}" not found`
+      );
+    }
+
+    // Determine new content
+    let newContent: string;
+    if (content) {
+      newContent = content;
+    } else if (transform) {
+      newContent = transform(currentContent);
+    } else {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        'Either content or transform function must be provided'
+      );
+    }
+
+    try {
+      const success = await updateBlock(this.graph, {
+        action: 'update-block',
+        block: {
+          uid: block_uid,
+          string: newContent
+        }
+      });
+
+      if (!success) {
+        throw new Error('Failed to update block');
+      }
+
+      return { 
+        success: true,
+        content: newContent
+      };
+    } catch (error: any) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to update block: ${error.message}`
+      );
     }
   }
 
