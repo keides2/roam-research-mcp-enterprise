@@ -249,5 +249,27 @@ export const toolSchemas = {
       properties: {},
       required: []
     }
+  },
+  roam_search_by_text: {
+    name: 'roam_search_by_text',
+    description: 'Search for blocks containing specific text across all pages or within a specific page.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: 'The text to search for'
+        },
+        page_title_uid: {
+          type: 'string',
+          description: 'Optional: Title or UID of the page to search in. If not provided, searches across all pages'
+        },
+        case_sensitive: {
+          type: 'boolean',
+          description: 'Optional: Whether to perform a case-sensitive search (default: false)'
+        }
+      },
+      required: ['text']
+    }
   }
 };

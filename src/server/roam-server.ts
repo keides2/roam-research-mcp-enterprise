@@ -10,7 +10,7 @@ import { initializeGraph, type Graph } from '@roam-research/roam-api-sdk';
 import { API_TOKEN, GRAPH_NAME } from '../config/environment.js';
 import { toolSchemas } from '../tools/schemas.js';
 import { ToolHandlers } from '../tools/tool-handlers.js';
-import { TagSearchHandler, BlockRefSearchHandler, HierarchySearchHandler } from '../search/index.js';
+import { TagSearchHandler, BlockRefSearchHandler, HierarchySearchHandler, TextSearchHandler } from '../search/index.js';
 
 export class RoamServer {
   private server: Server;
@@ -28,7 +28,7 @@ export class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.15.0',
+        version: '0.16.0',
       },
       {
           capabilities: {
@@ -43,7 +43,8 @@ export class RoamServer {
               roam_search_by_status: {},
               roam_search_block_refs: {},
               roam_search_hierarchy: {},
-              find_pages_modified_today: {}
+              find_pages_modified_today: {},
+              roam_search_by_text: {}
             },
           },
       }
@@ -207,6 +208,19 @@ export class RoamServer {
 
           case 'find_pages_modified_today': {
             const result = await this.toolHandlers.findPagesModifiedToday();
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_search_by_text': {
+            const params = request.params.arguments as {
+              text: string;
+              page_title_uid?: string;
+              case_sensitive?: boolean;
+            };
+            const handler = new TextSearchHandler(this.graph, params);
+            const result = await handler.execute();
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };

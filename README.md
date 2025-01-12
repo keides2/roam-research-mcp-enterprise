@@ -27,7 +27,7 @@ npm run build
 
 ## Features
 
-The server provides nine powerful tools for interacting with Roam Research:
+The server provides ten powerful tools for interacting with Roam Research:
 
 1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `roam_create_page`: Create new pages with optional content
@@ -38,6 +38,7 @@ The server provides nine powerful tools for interacting with Roam Research:
 7. `roam_search_block_refs`: Search for block references within pages or across the graph
 8. `roam_search_hierarchy`: Navigate and search through block parent-child relationships
 9. `find_pages_modified_today`: Find all pages that have been modified since midnight today
+10. `roam_search_by_text`: Search for blocks containing specific text across all pages or within a specific page
 
 ## Setup
 
@@ -320,6 +321,48 @@ Returns:
     }
   ],
   "message": "Found N block(s) referencing..."
+}
+```
+
+### Search By Text
+
+Search for blocks containing specific text across all pages or within a specific page:
+
+```typescript
+use_mcp_tool roam-research roam_search_by_text {
+  "text": "search text",
+  "page_title_uid": "optional-page-title-or-uid",
+  "case_sensitive": false
+}
+```
+
+Features:
+
+- Search for any text across all blocks in the graph
+- Optional page-scoped search
+- Case-sensitive or case-insensitive search
+- Returns block content with page context
+- Efficient text matching using Datalog queries
+
+Parameters:
+
+- `text`: The text to search for (required)
+- `page_title_uid`: Title or UID of the page to search in (optional)
+- `case_sensitive`: Whether to perform a case-sensitive search (optional, default: false)
+
+Returns:
+
+```json
+{
+  "success": true,
+  "matches": [
+    {
+      "block_uid": "matching-block-uid",
+      "content": "Block content containing search text",
+      "page_title": "Page containing block"
+    }
+  ],
+  "message": "Found N block(s) containing \"search text\""
 }
 ```
 

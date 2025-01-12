@@ -5,3 +5,5 @@ build/
 typescript/*
 src/test-queries.ts
 test-*
+src/.DS_Store
+.DS_Store

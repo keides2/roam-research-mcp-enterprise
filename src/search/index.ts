@@ -4,3 +4,4 @@ export * from './tag-search.js';
 export * from './status-search.js';
 export * from './block-ref-search.js';
 export * from './hierarchy-search.js';
+export * from './text-search.js';
