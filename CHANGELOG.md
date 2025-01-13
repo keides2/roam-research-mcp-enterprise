@@ -1,3 +1,8 @@
+v0.18.0
+
+- Added roam_search_by_date tool to search for blocks and pages based on creation or modification dates
+- Added support for date range filtering and content inclusion options
+
 v0.17.0
 
 - Enhanced roam_update_block tool with transform pattern support, allowing regex-based content transformations

@@ -28,7 +28,7 @@ export class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.16.0',
+        version: '0.17.0',
       },
       {
           capabilities: {
@@ -45,7 +45,8 @@ export class RoamServer {
               roam_search_hierarchy: {},
               find_pages_modified_today: {},
               roam_search_by_text: {},
-              roam_update_block: {}
+              roam_update_block: {},
+              roam_search_by_date: {}
             },
           },
       }
@@ -222,6 +223,20 @@ export class RoamServer {
             };
             const handler = new TextSearchHandler(this.graph, params);
             const result = await handler.execute();
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_search_by_date': {
+            const params = request.params.arguments as {
+              start_date: string;
+              end_date?: string;
+              type: 'created' | 'modified' | 'both';
+              scope: 'blocks' | 'pages' | 'both';
+              include_content: boolean;
+            };
+            const result = await this.toolHandlers.searchByDate(params);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };

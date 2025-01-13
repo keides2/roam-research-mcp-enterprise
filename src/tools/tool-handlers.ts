@@ -1158,6 +1158,73 @@ export class ToolHandlers {
     };
   }
 
+  async searchByDate(params: {
+    start_date: string;
+    end_date?: string;
+    type: 'created' | 'modified' | 'both';
+    scope: 'blocks' | 'pages' | 'both';
+    include_content: boolean;
+  }): Promise<{ success: boolean; matches: Array<{ uid: string; type: string; time: number; content?: string; page_title?: string }>; message: string }> {
+    // Convert dates to timestamps
+    const startTimestamp = new Date(`${params.start_date}T00:00:00`).getTime();
+    const endTimestamp = params.end_date ? new Date(`${params.end_date}T23:59:59`).getTime() : undefined;
+
+    // Define rule for entity type
+    const entityRule = `[
+      [(block? ?e)
+       [?e :block/string]
+       [?e :block/page ?p]
+       [?p :node/title]]
+      [(page? ?e)
+       [?e :node/title]]
+    ]`;
+
+    // Build query based on cheatsheet pattern
+    const timeAttr = params.type === 'created' ? ':create/time' : ':edit/time';
+    let queryStr = `[:find ?block-uid ?string ?time ?page-title
+                    :in $ ?start-ts ${endTimestamp ? '?end-ts' : ''}
+                    :where
+                    [?b ${timeAttr} ?time]
+                    [(>= ?time ?start-ts)]
+                    ${endTimestamp ? '[(<= ?time ?end-ts)]' : ''}
+                    [?b :block/uid ?block-uid]
+                    [?b :block/string ?string]
+                    [?b :block/page ?p]
+                    [?p :node/title ?page-title]]`;
+
+    // Execute query
+    const queryParams = endTimestamp ? 
+      [startTimestamp, endTimestamp] : 
+      [startTimestamp];
+    const results = await q(this.graph, queryStr, queryParams) as Array<[string, string, number, string]>;
+
+    if (!results || results.length === 0) {
+      return {
+        success: true,
+        matches: [],
+        message: 'No matches found for the given date range and criteria'
+      };
+    }
+
+    // Process results - now we get [block-uid, string, time, page-title]
+    const matches = results.map(([uid, content, time, pageTitle]) => ({
+      uid,
+      type: 'block',
+      time,
+      ...(params.include_content && { content }),
+      page_title: pageTitle
+    }));
+
+    // Sort by time
+    const sortedMatches = matches.sort((a, b) => b.time - a.time);
+
+    return {
+      success: true,
+      matches: sortedMatches,
+      message: `Found ${sortedMatches.length} matches for the given date range and criteria`
+    };
+  }
+
   async addTodos(todos: string[]): Promise<{ success: boolean }> {
     if (!Array.isArray(todos) || todos.length === 0) {
       throw new McpError(

@@ -313,5 +313,38 @@ export const toolSchemas = {
         { required: ['transform_pattern'] }
       ]
     }
+  },
+  roam_search_by_date: {
+    name: 'roam_search_by_date',
+    description: 'Search for blocks or pages based on creation or modification dates',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        start_date: {
+          type: 'string',
+          description: 'Start date in ISO format (YYYY-MM-DD)',
+        },
+        end_date: {
+          type: 'string',
+          description: 'Optional: End date in ISO format (YYYY-MM-DD)',
+        },
+        type: {
+          type: 'string',
+          enum: ['created', 'modified', 'both'],
+          description: 'Whether to search by creation date, modification date, or both',
+        },
+        scope: {
+          type: 'string',
+          enum: ['blocks', 'pages', 'both'],
+          description: 'Whether to search blocks, pages, or both',
+        },
+        include_content: {
+          type: 'boolean',
+          description: 'Whether to include the content of matching blocks/pages',
+          default: true,
+        }
+      },
+      required: ['start_date', 'type', 'scope']
+    }
   }
 };

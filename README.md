@@ -28,7 +28,7 @@ npm run build
 
 ## Features
 
-The server provides eleven powerful tools for interacting with Roam Research:
+The server provides twelve powerful tools for interacting with Roam Research:
 
 1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `roam_create_page`: Create new pages with optional content
@@ -41,6 +41,7 @@ The server provides eleven powerful tools for interacting with Roam Research:
 9. `find_pages_modified_today`: Find all pages that have been modified since midnight today
 10. `roam_search_by_text`: Search for blocks containing specific text across all pages or within a specific page
 11. `roam_update_block`: Update block content with direct text or pattern-based transformations
+12. `roam_search_by_date`: Search for blocks and pages based on creation or modification dates
 
 ## Setup
 
@@ -417,6 +418,55 @@ Returns:
 {
   "success": true,
   "content": "Updated block content"
+}
+```
+
+### Search By Date
+
+Search for blocks and pages based on creation or modification dates:
+
+```typescript
+use_mcp_tool roam-research roam_search_by_date {
+  "start_date": "2025-01-01",
+  "end_date": "2025-01-31",
+  "type": "modified",
+  "scope": "blocks",
+  "include_content": true
+}
+```
+
+Features:
+
+- Search by creation date, modification date, or both
+- Filter blocks, pages, or both
+- Optional date range with start and end dates
+- Include or exclude block/page content in results
+- Sort results by timestamp
+- Efficient date-based filtering using Datalog queries
+
+Parameters:
+
+- `start_date`: Start date in ISO format (YYYY-MM-DD) (required)
+- `end_date`: End date in ISO format (YYYY-MM-DD) (optional)
+- `type`: Whether to search by 'created', 'modified', or 'both' (required)
+- `scope`: Whether to search 'blocks', 'pages', or 'both' (required)
+- `include_content`: Whether to include the content of matching blocks/pages (optional, default: true)
+
+Returns:
+
+```json
+{
+  "success": true,
+  "matches": [
+    {
+      "uid": "block-or-page-uid",
+      "type": "block",
+      "time": 1704067200000,
+      "content": "Block or page content",
+      "page_title": "Page title (for blocks)"
+    }
+  ],
+  "message": "Found N matches for the given date range and criteria"
 }
 ```
 
