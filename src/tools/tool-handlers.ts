@@ -220,14 +220,21 @@ export class ToolHandlers {
     );
 
     // Helper function to find block with improved relationship checks
-    const findBlockWithRetry = async (pageUid: string, blockString: string, maxRetries = 5, initialDelay = 1000): Promise<string> => {
+    const findBlockWithRetry = async (
+      pageUid: string, 
+      blockString: string, 
+      maxRetries = 5, 
+      initialDelay = 1000,
+      case_sensitive = false
+    ): Promise<string> => {
       // Try multiple query strategies
       const queries = [
         // Strategy 1: Direct page and string match
         `[:find ?b-uid ?order
           :where [?p :block/uid "${pageUid}"]
                  [?b :block/page ?p]
-                 [?b :block/string "${blockString}"]
+                 [?b :block/string ?block-str]
+                 [(${case_sensitive ? '=' : 'clojure.string/equals-ignore-case'} ?block-str "${blockString}")]
                  [?b :block/order ?order]
                  [?b :block/uid ?b-uid]]`,
         
@@ -235,7 +242,8 @@ export class ToolHandlers {
         `[:find ?b-uid ?order
           :where [?p :block/uid "${pageUid}"]
                  [?b :block/parents ?p]
-                 [?b :block/string "${blockString}"]
+                 [?b :block/string ?block-str]
+                 [(${case_sensitive ? '=' : 'clojure.string/equals-ignore-case'} ?block-str "${blockString}")]
                  [?b :block/order ?order]
                  [?b :block/uid ?b-uid]]`,
         
@@ -244,7 +252,8 @@ export class ToolHandlers {
           :where [?p :block/uid "${pageUid}"]
                  [?b :block/page ?page]
                  [?p :block/page ?page]
-                 [?b :block/string "${blockString}"]
+                 [?b :block/string ?block-str]
+                 [(${case_sensitive ? '=' : 'clojure.string/equals-ignore-case'} ?block-str "${blockString}")]
                  [?b :block/order ?order]
                  [?b :block/uid ?b-uid]]`
       ];
@@ -279,7 +288,8 @@ export class ToolHandlers {
       parentUid: string,
       maxRetries = 5,
       initialDelay = 1000,
-      isRetry = false
+      isRetry = false,
+      case_sensitive = false
     ): Promise<string> => {
       try {
         // Initial delay before any operations
@@ -306,7 +316,7 @@ export class ToolHandlers {
 
           try {
             // Try to find the block using our improved findBlockWithRetry
-            return await findBlockWithRetry(parentUid, content);
+            return await findBlockWithRetry(parentUid, content, maxRetries, initialDelay, case_sensitive);
           } catch (error: any) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.log(`Failed to find block on attempt ${retry + 1}: ${errorMessage}`);
@@ -325,7 +335,7 @@ export class ToolHandlers {
         // Otherwise, try one more time with a clean slate
         console.log(`Retrying block creation for "${content}" with fresh attempt`);
         await new Promise(resolve => setTimeout(resolve, initialDelay * 2));
-        return createAndVerifyBlock(content, parentUid, maxRetries, initialDelay, true);
+        return createAndVerifyBlock(content, parentUid, maxRetries, initialDelay, true, case_sensitive);
       }
     };
 
@@ -950,11 +960,135 @@ export class ToolHandlers {
     }
   }
 
+  async updateBlocks(updates: Array<{
+    block_uid: string;
+    content?: string;
+    transform?: { find: string; replace: string; global?: boolean };
+  }>): Promise<{ success: boolean; results: Array<{ block_uid: string; content: string; success: boolean; error?: string }> }> {
+    if (!Array.isArray(updates) || updates.length === 0) {
+      throw new McpError(
+        ErrorCode.InvalidRequest,
+        'updates must be a non-empty array'
+      );
+    }
+
+    // Validate each update has required fields
+    updates.forEach((update, index) => {
+      if (!update.block_uid) {
+        throw new McpError(
+          ErrorCode.InvalidRequest,
+          `Update at index ${index} missing block_uid`
+        );
+      }
+      if (!update.content && !update.transform) {
+        throw new McpError(
+          ErrorCode.InvalidRequest,
+          `Update at index ${index} must have either content or transform`
+        );
+      }
+    });
+
+    // Get current content for all blocks
+    const blockUids = updates.map(u => u.block_uid);
+    const blockQuery = `[:find ?uid ?string
+                        :in $ [?uid ...]
+                        :where [?b :block/uid ?uid]
+                               [?b :block/string ?string]]`;
+    const blockResults = await q(this.graph, blockQuery, [blockUids]) as [string, string][];
+    
+    // Create map of uid -> current content
+    const contentMap = new Map<string, string>();
+    blockResults.forEach(([uid, string]) => {
+      contentMap.set(uid, string);
+    });
+
+    // Prepare batch actions
+    const actions: BatchAction[] = [];
+    const results: Array<{ block_uid: string; content: string; success: boolean; error?: string }> = [];
+
+    for (const update of updates) {
+      try {
+        const currentContent = contentMap.get(update.block_uid);
+        if (!currentContent) {
+          results.push({
+            block_uid: update.block_uid,
+            content: '',
+            success: false,
+            error: `Block with UID "${update.block_uid}" not found`
+          });
+          continue;
+        }
+
+        // Determine new content
+        let newContent: string;
+        if (update.content) {
+          newContent = update.content;
+        } else if (update.transform) {
+          const regex = new RegExp(update.transform.find, update.transform.global ? 'g' : '');
+          newContent = currentContent.replace(regex, update.transform.replace);
+        } else {
+          // This shouldn't happen due to earlier validation
+          throw new Error('Invalid update configuration');
+        }
+
+        // Add to batch actions
+        actions.push({
+          action: 'update-block',
+          block: {
+            uid: update.block_uid,
+            string: newContent
+          }
+        });
+
+        results.push({
+          block_uid: update.block_uid,
+          content: newContent,
+          success: true
+        });
+      } catch (error: any) {
+        results.push({
+          block_uid: update.block_uid,
+          content: contentMap.get(update.block_uid) || '',
+          success: false,
+          error: error.message
+        });
+      }
+    }
+
+    // Execute batch update if we have any valid actions
+    if (actions.length > 0) {
+      try {
+        const batchResult = await batchActions(this.graph, {
+          action: 'batch-actions',
+          actions
+        });
+
+        if (!batchResult) {
+          throw new Error('Batch update failed');
+        }
+      } catch (error: any) {
+        // Mark all previously successful results as failed
+        results.forEach(result => {
+          if (result.success) {
+            result.success = false;
+            result.error = `Batch update failed: ${error.message}`;
+          }
+        });
+      }
+    }
+
+    return {
+      success: results.every(r => r.success),
+      results
+    };
+  }
+
   async searchByStatus(
     status: 'TODO' | 'DONE', 
     page_title_uid?: string,
     include?: string,
-    exclude?: string
+    exclude?: string,
+    case_sensitive: boolean = true  // Changed to true to match Roam's behavior
   ): Promise<{ success: boolean; matches: Array<{ block_uid: string; content: string; page_title?: string }>; message: string }> {
     // Get target page UID if provided
     let targetPageUid: string | undefined;
@@ -1027,25 +1161,31 @@ export class ToolHandlers {
       };
     });
 
-    // Post-query filtering
+    // Post-query filtering with case sensitivity option
     if (include) {
-      const includeTerms = include.toLowerCase().split(',').map(term => term.trim());
-      matches = matches.filter(match => 
-        includeTerms.some(term => 
-          match.content.toLowerCase().includes(term) || 
-          (match.page_title && match.page_title.toLowerCase().includes(term))
-        )
-      );
+      const includeTerms = include.split(',').map(term => term.trim());
+      matches = matches.filter(match => {
+        const matchContent = case_sensitive ? match.content : match.content.toLowerCase();
+        const matchTitle = match.page_title && (case_sensitive ? match.page_title : match.page_title.toLowerCase());
+        const terms = case_sensitive ? includeTerms : includeTerms.map(t => t.toLowerCase());
+        return terms.some(term => 
+          matchContent.includes(case_sensitive ? term : term.toLowerCase()) || 
+          (matchTitle && matchTitle.includes(case_sensitive ? term : term.toLowerCase()))
+        );
+      });
     }
 
     if (exclude) {
-      const excludeTerms = exclude.toLowerCase().split(',').map(term => term.trim());
-      matches = matches.filter(match => 
-        !excludeTerms.some(term => 
-          match.content.toLowerCase().includes(term) || 
-          (match.page_title && match.page_title.toLowerCase().includes(term))
-        )
-      );
+      const excludeTerms = exclude.split(',').map(term => term.trim());
+      matches = matches.filter(match => {
+        const matchContent = case_sensitive ? match.content : match.content.toLowerCase();
+        const matchTitle = match.page_title && (case_sensitive ? match.page_title : match.page_title.toLowerCase());
+        const terms = case_sensitive ? excludeTerms : excludeTerms.map(t => t.toLowerCase());
+        return !terms.some(term => 
+          matchContent.includes(case_sensitive ? term : term.toLowerCase()) || 
+          (matchTitle && matchTitle.includes(case_sensitive ? term : term.toLowerCase()))
+        );
+      });
     }
 
     return {
@@ -1055,7 +1195,12 @@ export class ToolHandlers {
     };
   }
 
-  async searchForTag(primary_tag: string, page_title_uid?: string, near_tag?: string): Promise<{ success: boolean; matches: Array<{ block_uid: string; content: string; page_title?: string }>; message: string }> {
+  async searchForTag(
+    primary_tag: string, 
+    page_title_uid?: string, 
+    near_tag?: string,
+    case_sensitive: boolean = true  // Changed to true to match Roam's behavior
+  ): Promise<{ success: boolean; matches: Array<{ block_uid: string; content: string; page_title?: string }>; message: string }> {
     // Ensure tags are properly formatted with #
     const formatTag = (tag: string) => tag.startsWith('#') ? tag : `#${tag}`;
     const primaryTagFormatted = formatTag(primary_tag);
@@ -1097,8 +1242,12 @@ export class ToolHandlers {
                            [?b :block/page ?p]
                            [?b :block/string ?block-str]
                            [?b :block/uid ?block-uid]
-                           [(clojure.string/includes? ?block-str ?primary-tag)]
-                           [(clojure.string/includes? ?block-str ?near-tag)]]`;
+                           [(clojure.string/includes? 
+                             ${case_sensitive ? '?block-str' : '(clojure.string/lower-case ?block-str)'} 
+                             ${case_sensitive ? '?primary-tag' : '(clojure.string/lower-case ?primary-tag)'})]
+                           [(clojure.string/includes? 
+                             ${case_sensitive ? '?block-str' : '(clojure.string/lower-case ?block-str)'} 
+                             ${case_sensitive ? '?near-tag' : '(clojure.string/lower-case ?near-tag)'})]`;
         queryParams = [primaryTagFormatted, nearTagFormatted, targetPageUid];
       } else {
         queryStr = `[:find ?block-uid ?block-str
@@ -1107,7 +1256,9 @@ export class ToolHandlers {
                            [?b :block/page ?p]
                            [?b :block/string ?block-str]
                            [?b :block/uid ?block-uid]
-                           [(clojure.string/includes? ?block-str ?primary-tag)]]`;
+                           [(clojure.string/includes? 
+                             ${case_sensitive ? '?block-str' : '(clojure.string/lower-case ?block-str)'} 
+                             ${case_sensitive ? '?primary-tag' : '(clojure.string/lower-case ?primary-tag)'})]`;
         queryParams = [primaryTagFormatted, targetPageUid];
       }
     } else {
@@ -1119,8 +1270,12 @@ export class ToolHandlers {
                            [?b :block/uid ?block-uid]
                            [?b :block/page ?p]
                            [?p :node/title ?page-title]
-                           [(clojure.string/includes? ?block-str ?primary-tag)]
-                           [(clojure.string/includes? ?block-str ?near-tag)]]`;
+                           [(clojure.string/includes? 
+                             ${case_sensitive ? '?block-str' : '(clojure.string/lower-case ?block-str)'} 
+                             ${case_sensitive ? '?primary-tag' : '(clojure.string/lower-case ?primary-tag)'})]
+                           [(clojure.string/includes? 
+                             ${case_sensitive ? '?block-str' : '(clojure.string/lower-case ?block-str)'} 
+                             ${case_sensitive ? '?near-tag' : '(clojure.string/lower-case ?near-tag)'})]`;
         queryParams = [primaryTagFormatted, nearTagFormatted];
       } else {
         queryStr = `[:find ?block-uid ?block-str ?page-title
@@ -1129,7 +1284,9 @@ export class ToolHandlers {
                            [?b :block/uid ?block-uid]
                            [?b :block/page ?p]
                            [?p :node/title ?page-title]
-                           [(clojure.string/includes? ?block-str ?primary-tag)]]`;
+                           [(clojure.string/includes? 
+                             ${case_sensitive ? '?block-str' : '(clojure.string/lower-case ?block-str)'} 
+                             ${case_sensitive ? '?primary-tag' : '(clojure.string/lower-case ?primary-tag)'})]`;
         queryParams = [primaryTagFormatted];
       }
     }
@@ -1164,6 +1321,7 @@ export class ToolHandlers {
     type: 'created' | 'modified' | 'both';
     scope: 'blocks' | 'pages' | 'both';
     include_content: boolean;
+    case_sensitive?: boolean;  // Removed initializer from type definition
   }): Promise<{ success: boolean; matches: Array<{ uid: string; type: string; time: number; content?: string; page_title?: string }>; message: string }> {
     // Convert dates to timestamps
     const startTimestamp = new Date(`${params.start_date}T00:00:00`).getTime();
@@ -1214,6 +1372,21 @@ export class ToolHandlers {
       ...(params.include_content && { content }),
       page_title: pageTitle
     }));
+
+    // Apply case sensitivity if content is included
+    if (params.include_content) {
+      const case_sensitive = params.case_sensitive ?? true; // Default to true to match Roam's behavior
+      if (!case_sensitive) {
+        matches.forEach(match => {
+          if (match.content) {
+            match.content = match.content.toLowerCase();
+          }
+          if (match.page_title) {
+            match.page_title = match.page_title.toLowerCase();
+          }
+        });
+      }
+    }
 
     // Sort by time
     const sortedMatches = matches.sort((a, b) => b.time - a.time);

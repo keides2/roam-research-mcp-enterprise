@@ -335,7 +335,7 @@ Search for blocks containing specific text across all pages or within a specific
 use_mcp_tool roam-research roam_search_by_text {
   "text": "search text",
   "page_title_uid": "optional-page-title-or-uid",
-  "case_sensitive": false
+  "case_sensitive": true
 }
 ```
 
@@ -351,7 +351,7 @@ Parameters:
 
 - `text`: The text to search for (required)
 - `page_title_uid`: Title or UID of the page to search in (optional)
-- `case_sensitive`: Whether to perform a case-sensitive search (optional, default: false)
+- `case_sensitive`: Whether to perform a case-sensitive search (optional, default: true to match Roam's native behavior)
 
 Returns:
 

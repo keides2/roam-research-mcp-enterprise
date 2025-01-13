@@ -2,7 +2,7 @@
 export const toolSchemas = {
   roam_add_todo: {
     name: 'roam_add_todo',
-    description: 'Add a list of todo items as individual blocks to today\'s daily page in Roam. Each item becomes its own actionable block with todo status.',
+    description: 'Add a list of todo items as individual blocks to today\'s daily page in Roam. Each item becomes its own actionable block with todo status.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -52,7 +52,7 @@ export const toolSchemas = {
   },
   roam_create_block: {
     name: 'roam_create_block',
-    description: 'Add a new block to an existing Roam page. If no page specified, adds to today\'s daily note. Best for capturing immediate thoughts, additions to discussions, or content that doesn\'t warrant its own page. Can specify page by title or UID.',
+    description: 'Add a new block to an existing Roam page. If no page specified, adds to today\'s daily note. Best for capturing immediate thoughts, additions to discussions, or content that doesn\'t warrant its own page. Can specify page by title or UID.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -161,6 +161,11 @@ export const toolSchemas = {
         near_tag: {
           type: 'string',
           description: 'Optional: Another tag to filter results by - will only return blocks where both tags appear',
+        },
+        case_sensitive: {
+          type: 'boolean',
+          description: 'Optional: Whether to perform case-sensitive matching (default: true, matching Roam\'s native behavior)',
+          default: true
         }
       },
       required: ['primary_tag']
@@ -188,6 +193,11 @@ export const toolSchemas = {
         exclude: {
           type: 'string',
           description: 'Optional: Comma-separated list of terms to filter results by exclusion (matches content or page title)'
+        },
+        case_sensitive: {
+          type: 'boolean',
+          description: 'Optional: Whether to perform case-sensitive matching (default: true, matching Roam\'s native behavior)',
+          default: true
         }
       },
       required: ['status']
@@ -266,7 +276,8 @@ export const toolSchemas = {
         },
         case_sensitive: {
           type: 'boolean',
-          description: 'Optional: Whether to perform a case-sensitive search (default: false)'
+          description: 'Optional: Whether to perform case-sensitive search (default: true, matching Roam\'s native behavior)',
+          default: true
         }
       },
       required: ['text']
@@ -274,7 +285,7 @@ export const toolSchemas = {
   },
   roam_update_block: {
     name: 'roam_update_block',
-    description: 'Update the content of an existing block identified by its UID. Can either provide new content directly or use a transform pattern to modify existing content.',
+    description: 'Update the content of an existing block identified by its UID. Can either provide new content directly or use a transform pattern to modify existing content.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -314,6 +325,58 @@ export const toolSchemas = {
       ]
     }
   },
+  roam_update_blocks: {
+    name: 'roam_update_blocks',
+    description: 'Update multiple blocks in a single batch operation. Each update can provide either new content directly or a transform pattern.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        updates: {
+          type: 'array',
+          description: 'Array of block updates to perform',
+          items: {
+            type: 'object',
+            properties: {
+              block_uid: {
+                type: 'string',
+                description: 'UID of the block to update'
+              },
+              content: {
+                type: 'string',
+                description: 'New content for the block. If not provided, transform will be used.'
+              },
+              transform: {
+                type: 'object',
+                description: 'Pattern to transform the current content. Used if content is not provided.',
+                properties: {
+                  find: {
+                    type: 'string',
+                    description: 'Text or regex pattern to find'
+                  },
+                  replace: {
+                    type: 'string',
+                    description: 'Text to replace with'
+                  },
+                  global: {
+                    type: 'boolean',
+                    description: 'Whether to replace all occurrences',
+                    default: true
+                  }
+                },
+                required: ['find', 'replace']
+              }
+            },
+            required: ['block_uid'],
+            oneOf: [
+              { required: ['content'] },
+              { required: ['transform'] }
+            ]
+          }
+        }
+      },
+      required: ['updates']
+    }
+  },
   roam_search_by_date: {
     name: 'roam_search_by_date',
     description: 'Search for blocks or pages based on creation or modification dates',
@@ -342,6 +405,11 @@ export const toolSchemas = {
           type: 'boolean',
           description: 'Whether to include the content of matching blocks/pages',
           default: true,
+        },
+        case_sensitive: {
+          type: 'boolean',
+          description: 'Optional: Whether to perform case-sensitive matching (default: true, matching Roam\'s native behavior)',
+          default: true
         }
       },
       required: ['start_date', 'type', 'scope']

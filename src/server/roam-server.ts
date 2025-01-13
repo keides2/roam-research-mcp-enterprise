@@ -46,6 +46,7 @@ export class RoamServer {
               find_pages_modified_today: {},
               roam_search_by_text: {},
               roam_update_block: {},
+              roam_update_blocks: {},
               roam_search_by_date: {}
             },
           },
@@ -266,6 +267,25 @@ export class RoamServer {
                 }
               );
             }
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_update_blocks': {
+            const { updates } = request.params.arguments as {
+              updates: Array<{
+                block_uid: string;
+                content?: string;
+                transform?: {
+                  find: string;
+                  replace: string;
+                  global?: boolean;
+                };
+              }>;
+            };
+            
+            const result = await this.toolHandlers.updateBlocks(updates);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };

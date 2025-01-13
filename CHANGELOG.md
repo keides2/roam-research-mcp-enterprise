@@ -1,3 +1,8 @@
+v0.19.0
+
+- Changed default case-sensitivity behavior in search tools to match Roam's native behavior (now defaults to true)
+- Updated case-sensitivity handling in findBlockWithRetry, searchByStatus, searchForTag, and searchByDate tools
+
 v0.18.0
 
 - Added roam_search_by_date tool to search for blocks and pages based on creation or modification dates
