@@ -74,7 +74,7 @@ export const toolSchemas = {
   },
   roam_create_outline: {
     name: 'roam_create_output_with_nested_structure',
-    description: 'Create a structured outline or output with nested structure in Roam from an array of items with explicit levels. Can be added on a specific page or under a specific block.',
+    description: 'Create a structured outline or output with nested structure in Roam from an array of items with explicit levels. Can be added on a specific page or under a specific block. Ideal for saving a conversation with an LLM response, research, or organizing thoughts.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -146,7 +146,7 @@ export const toolSchemas = {
   },
   roam_search_for_tag: {
     name: 'roam_search_for_tag',
-    description: 'Search for blocks containing a specific tag and optionally filter by blocks that also contain another tag nearby.',
+    description: 'Search for blocks containing a specific tag and optionally filter by blocks that also contain another tag nearby. Example: Use this to search for memories that are tagged with the MEMORIES_TAG.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -413,6 +413,27 @@ export const toolSchemas = {
         }
       },
       required: ['start_date', 'type', 'scope']
+    }
+  },
+  roam_remember: {
+    name: 'roam_remember',
+    description: 'Add a memory or piece of information to remember, stored on the daily page with #[[LLM/Memories]] tag and optional categories. Use roam_search_for_tag with "LLM/Memories" to find stored memories.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory: {
+          type: 'string',
+          description: 'The memory or information to remember'
+        },
+        categories: {
+          type: 'array',
+          items: {
+            type: 'string'
+          },
+          description: 'Optional categories to tag the memory with (will be converted to Roam tags)'
+        }
+      },
+      required: ['memory']
     }
   }
 };

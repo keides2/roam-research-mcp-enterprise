@@ -28,7 +28,7 @@ npm run build
 
 ## Features
 
-The server provides twelve powerful tools for interacting with Roam Research:
+The server provides fourteen powerful tools for interacting with Roam Research:
 
 1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `roam_create_page`: Create new pages with optional content
@@ -42,6 +42,8 @@ The server provides twelve powerful tools for interacting with Roam Research:
 10. `roam_search_by_text`: Search for blocks containing specific text across all pages or within a specific page
 11. `roam_update_block`: Update block content with direct text or pattern-based transformations
 12. `roam_search_by_date`: Search for blocks and pages based on creation or modification dates
+13. `roam_search_for_tag`: Search for blocks containing specific tags with optional filtering by nearby tags
+14. `roam_remember`: Store and categorize memories or information with automatic tagging
 
 ## Setup
 
@@ -60,28 +62,14 @@ The server provides twelve powerful tools for interacting with Roam Research:
    ```
    ROAM_API_TOKEN=your-api-token
    ROAM_GRAPH_NAME=your-graph-name
+   MEMORIES_TAG='#[[LLM/Memories]]'
+   PROFILE_PAGE='LLM/Profile' (not yet implemented)
    ```
 
    Option 2: Using MCP settings (Alternative method)
    Add the configuration to your MCP settings file:
 
    - For Cline (`~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`):
-
-   ```json
-   {
-     "mcpServers": {
-       "roam-research": {
-         "command": "node",
-         "args": ["/path/to/roam-research/build/index.js"],
-         "env": {
-           "ROAM_API_TOKEN": "your-api-token",
-           "ROAM_GRAPH_NAME": "your-graph-name"
-         }
-       }
-     }
-   }
-   ```
-
    - For Claude desktop app (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
    ```json
@@ -92,7 +80,9 @@ The server provides twelve powerful tools for interacting with Roam Research:
          "args": ["/path/to/roam-research/build/index.js"],
          "env": {
            "ROAM_API_TOKEN": "your-api-token",
-           "ROAM_GRAPH_NAME": "your-graph-name"
+           "ROAM_GRAPH_NAME": "your-graph-name",
+           "MEMORIES_TAG": "#[[LLM/Memories]]",
+           "PROFILE_PAGE": "LLM/Profile"
          }
        }
      }
@@ -418,6 +408,86 @@ Returns:
 {
   "success": true,
   "content": "Updated block content"
+}
+```
+
+### Search For Tags
+
+Search for blocks containing specific tags with optional filtering by nearby tags:
+
+```typescript
+use_mcp_tool roam-research roam_search_for_tag {
+  "primary_tag": "Project/Tasks",
+  "page_title_uid": "optional-page-title-or-uid",
+  "near_tag": "optional-secondary-tag",
+  "case_sensitive": true
+}
+```
+
+Features:
+
+- Search for blocks containing specific tags
+- Optional filtering by presence of another tag
+- Page-scoped or graph-wide search
+- Case-sensitive or case-insensitive search
+- Returns block content with page context
+- Efficient tag matching using Datalog queries
+
+Parameters:
+
+- `primary_tag`: The main tag to search for (required)
+- `page_title_uid`: Title or UID of the page to search in (optional)
+- `near_tag`: Another tag to filter results by (optional)
+- `case_sensitive`: Whether to perform case-sensitive search (optional, default: true to match Roam's native behavior)
+
+Returns:
+
+```json
+{
+  "success": true,
+  "matches": [
+    {
+      "block_uid": "matching-block-uid",
+      "content": "Block content containing #[[primary_tag]]",
+      "page_title": "Page containing block"
+    }
+  ],
+  "message": "Found N block(s) referencing \"primary_tag\""
+}
+```
+
+### Remember Information
+
+Store memories or important information with automatic tagging and categorization:
+
+```typescript
+use_mcp_tool roam-research roam_remember {
+  "memory": "Important information to remember",
+  "categories": ["Work", "Project/Alpha"]
+}
+```
+
+Features:
+
+- Store information with #[[LLM/Memories]] tag
+- Add optional category tags for organization
+- Automatically adds to today's daily page
+- Supports multiple categories per memory
+- Easy retrieval using roam_search_for_tag
+- Maintains chronological order of memories
+
+Parameters:
+
+- `memory`: The information to remember (required)
+- `categories`: Optional array of categories to tag the memory with
+
+Returns:
+
+```json
+{
+  "success": true,
+  "block_uid": "created-block-uid",
+  "content": "Memory content with tags"
 }
 ```
 

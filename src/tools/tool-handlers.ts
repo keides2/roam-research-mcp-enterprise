@@ -1398,6 +1398,81 @@ export class ToolHandlers {
     };
   }
 
+  async remember(memory: string, categories?: string[]): Promise<{ success: boolean }> {
+    // Get today's date
+    const today = new Date();
+    const dateStr = formatRoamDate(today);
+    
+    // Try to find today's page
+    const findQuery = `[:find ?uid :in $ ?title :where [?e :node/title ?title] [?e :block/uid ?uid]]`;
+    const findResults = await q(this.graph, findQuery, [dateStr]) as [string][];
+    
+    let pageUid: string;
+    
+    if (findResults && findResults.length > 0) {
+      pageUid = findResults[0][0];
+    } else {
+      // Create today's page if it doesn't exist
+      const success = await createPage(this.graph, {
+        action: 'create-page',
+        page: { title: dateStr }
+      });
+
+      if (!success) {
+        throw new McpError(
+          ErrorCode.InternalError,
+          'Failed to create today\'s page'
+        );
+      }
+
+      // Get the new page's UID
+      const results = await q(this.graph, findQuery, [dateStr]) as [string][];
+      if (!results || results.length === 0) {
+        throw new McpError(
+          ErrorCode.InternalError,
+          'Could not find created today\'s page'
+        );
+      }
+      pageUid = results[0][0];
+    }
+
+    // Get memories tag from environment
+    const memoriesTag = process.env.MEMORIES_TAG;
+    if (!memoriesTag) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        'MEMORIES_TAG environment variable not set'
+      );
+    }
+
+    // Format categories as Roam tags if provided
+    const categoryTags = categories?.map(cat => {
+      // Handle multi-word categories
+      return cat.includes(' ') ? `#[[${cat}]]` : `#${cat}`;
+    }).join(' ') || '';
+
+    // Create block with memory, memories tag, and optional categories
+    const blockContent = `${memoriesTag} ${memory} ${categoryTags}`.trim();
+    
+    const success = await createBlock(this.graph, {
+      action: 'create-block',
+      location: { 
+        "parent-uid": pageUid,
+        "order": "last"
+      },
+      block: { string: blockContent }
+    });
+
+    if (!success) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        'Failed to create memory block'
+      );
+    }
+
+    return { success: true };
+  }
+
   async addTodos(todos: string[]): Promise<{ success: boolean }> {
     if (!Array.isArray(todos) || todos.length === 0) {
       throw new McpError(

@@ -1,3 +1,7 @@
+v0.20.0
+
+- Added roam_remember tool to remember specific memories as created on the daily page. Can be used throughout the graph. Tag set in environmental vars in config.
+
 v0.19.0
 
 - Changed default case-sensitivity behavior in search tools to match Roam's native behavior (now defaults to true)

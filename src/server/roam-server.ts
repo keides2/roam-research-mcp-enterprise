@@ -33,6 +33,7 @@ export class RoamServer {
       {
           capabilities: {
             tools: {
+              roam_remember: {},
               roam_add_todo: {},
               roam_fetch_page_by_title: {},
               roam_create_page: {},
@@ -73,6 +74,17 @@ export class RoamServer {
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         switch (request.params.name) {
+          case 'roam_remember': {
+            const { memory, categories } = request.params.arguments as {
+              memory: string;
+              categories?: string[];
+            };
+            const result = await this.toolHandlers.remember(memory, categories);
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
           case 'roam_fetch_page_by_title': {
             const { title } = request.params.arguments as { title: string };
             const content = await this.toolHandlers.fetchPageByTitle(title);
