@@ -435,5 +435,14 @@ export const toolSchemas = {
       },
       required: ['memory']
     }
+  },
+  roam_recall: {
+    name: 'roam_recall',
+    description: 'Retrieve all stored memories by searching for blocks tagged with MEMORIES_TAG and content from the page with the same name. Returns a combined, deduplicated list of memories.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
   }
 };

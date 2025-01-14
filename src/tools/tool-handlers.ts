@@ -1473,6 +1473,60 @@ export class ToolHandlers {
     return { success: true };
   }
 
+  async recall(): Promise<{ success: boolean; matches: Array<{ block_uid: string; content: string; page_title?: string }>; message: string }> {
+    // Get memories tag from environment
+    const memoriesTag = process.env.MEMORIES_TAG;
+    if (!memoriesTag) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        'MEMORIES_TAG environment variable not set'
+      );
+    }
+
+    // First search for blocks with the memories tag
+    const tagResults = await this.searchForTag(memoriesTag);
+
+    // Then search for pages with the same title
+    const pageQuery = `[:find ?block-uid ?block-str ?page-title
+                       :in $ ?title
+                       :where [?p :node/title ?title]
+                              [?b :block/page ?p]
+                              [?b :block/string ?block-str]
+                              [?b :block/uid ?block-uid]
+                              [?p :node/title ?page-title]]`;
+    const pageResults = await q(this.graph, pageQuery, [memoriesTag.replace(/^#/, '')]) as [string, string, string][];
+
+    // Combine and deduplicate results
+    const seenUids = new Set<string>();
+    const allMatches = [];
+
+    // Add tag search results
+    for (const match of tagResults.matches) {
+      if (!seenUids.has(match.block_uid)) {
+        seenUids.add(match.block_uid);
+        allMatches.push(match);
+      }
+    }
+
+    // Add page search results
+    for (const [uid, content, pageTitle] of pageResults) {
+      if (!seenUids.has(uid)) {
+        seenUids.add(uid);
+        allMatches.push({
+          block_uid: uid,
+          content,
+          page_title: pageTitle
+        });
+      }
+    }
+
+    return {
+      success: true,
+      matches: allMatches,
+      message: `Found ${allMatches.length} memories`
+    };
+  }
+
   async addTodos(todos: string[]): Promise<{ success: boolean }> {
     if (!Array.isArray(todos) || todos.length === 0) {
       throw new McpError(

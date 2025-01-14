@@ -44,6 +44,7 @@ The server provides fourteen powerful tools for interacting with Roam Research:
 12. `roam_search_by_date`: Search for blocks and pages based on creation or modification dates
 13. `roam_search_for_tag`: Search for blocks containing specific tags with optional filtering by nearby tags
 14. `roam_remember`: Store and categorize memories or information with automatic tagging
+15. `roam_recall`: Recall memories of blocks marked with tag MEMORIES_TAG (see below) or blocks on page title of the same name.
 
 ## Setup
 

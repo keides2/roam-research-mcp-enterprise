@@ -34,6 +34,7 @@ export class RoamServer {
           capabilities: {
             tools: {
               roam_remember: {},
+              roam_recall: {},
               roam_add_todo: {},
               roam_fetch_page_by_title: {},
               roam_create_page: {},
@@ -279,6 +280,13 @@ export class RoamServer {
                 }
               );
             }
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_recall': {
+            const result = await this.toolHandlers.recall();
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };
