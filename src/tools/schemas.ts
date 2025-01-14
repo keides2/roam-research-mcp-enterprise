@@ -399,7 +399,7 @@ export const toolSchemas = {
   },
   roam_remember: {
     name: 'roam_remember',
-    description: 'Add a memory or piece of information to remember, stored on the daily page with #[[LLM/Memories]] tag and optional categories. Use roam_search_for_tag with "LLM/Memories" to find stored memories.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
+    description: 'Add a memory or piece of information to remember, stored on the daily page with #[[LLM/Memories]] tag and optional categories. \nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
     inputSchema: {
       type: 'object',
       properties: {
