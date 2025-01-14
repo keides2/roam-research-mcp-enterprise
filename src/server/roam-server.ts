@@ -10,7 +10,6 @@ import { initializeGraph, type Graph } from '@roam-research/roam-api-sdk';
 import { API_TOKEN, GRAPH_NAME } from '../config/environment.js';
 import { toolSchemas } from '../tools/schemas.js';
 import { ToolHandlers } from '../tools/tool-handlers.js';
-import { TagSearchHandler, BlockRefSearchHandler, HierarchySearchHandler, TextSearchHandler } from '../search/index.js';
 
 export class RoamServer {
   private server: Server;
@@ -171,13 +170,12 @@ export class RoamServer {
           }
 
           case 'roam_search_for_tag': {
-            const params = request.params.arguments as {
+            const { primary_tag, page_title_uid, near_tag } = request.params.arguments as {
               primary_tag: string;
               page_title_uid?: string;
               near_tag?: string;
             };
-            const handler = new TagSearchHandler(this.graph, params);
-            const result = await handler.execute();
+            const result = await this.toolHandlers.searchForTag(primary_tag, page_title_uid, near_tag);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };
@@ -201,8 +199,7 @@ export class RoamServer {
               block_uid?: string;
               page_title_uid?: string;
             };
-            const handler = new BlockRefSearchHandler(this.graph, params);
-            const result = await handler.execute();
+            const result = await this.toolHandlers.searchBlockRefs(params);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };
@@ -215,8 +212,7 @@ export class RoamServer {
               page_title_uid?: string;
               max_depth?: number;
             };
-            const handler = new HierarchySearchHandler(this.graph, params);
-            const result = await handler.execute();
+            const result = await this.toolHandlers.searchHierarchy(params);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };
@@ -233,10 +229,8 @@ export class RoamServer {
             const params = request.params.arguments as {
               text: string;
               page_title_uid?: string;
-              case_sensitive?: boolean;
             };
-            const handler = new TextSearchHandler(this.graph, params);
-            const result = await handler.execute();
+            const result = await this.toolHandlers.searchByText(params);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };

@@ -73,8 +73,8 @@ export const toolSchemas = {
     },
   },
   roam_create_outline: {
-    name: 'roam_create_output_with_nested_structure',
-    description: 'Create a structured outline or output with nested structure in Roam from an array of items with explicit levels. Can be added on a specific page or under a specific block. Ideal for saving a conversation with an LLM response, research, or organizing thoughts.',
+    name: 'roam_create_outline',
+    description: 'Create a structured outline with nested structure in Roam from an array of items with explicit levels. Can be added on a specific page or under a specific block. Ideal for saving a conversation with an LLM response, research, or organizing thoughts.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -98,7 +98,9 @@ export const toolSchemas = {
               },
               level: {
                 type: 'integer',
-                description: 'Indentation level (1-5, where 1 is top level)'
+                description: 'Indentation level (1-10, where 1 is top level)',
+                minimum: 1,
+                maximum: 10
               }
             },
             required: ['text', 'level']
@@ -161,11 +163,6 @@ export const toolSchemas = {
         near_tag: {
           type: 'string',
           description: 'Optional: Another tag to filter results by - will only return blocks where both tags appear',
-        },
-        case_sensitive: {
-          type: 'boolean',
-          description: 'Optional: Whether to perform case-sensitive matching (default: true, matching Roam\'s native behavior)',
-          default: true
         }
       },
       required: ['primary_tag']
@@ -193,11 +190,6 @@ export const toolSchemas = {
         exclude: {
           type: 'string',
           description: 'Optional: Comma-separated list of terms to filter results by exclusion (matches content or page title)'
-        },
-        case_sensitive: {
-          type: 'boolean',
-          description: 'Optional: Whether to perform case-sensitive matching (default: true, matching Roam\'s native behavior)',
-          default: true
         }
       },
       required: ['status']
@@ -273,11 +265,6 @@ export const toolSchemas = {
         page_title_uid: {
           type: 'string',
           description: 'Optional: Title or UID of the page to search in. If not provided, searches across all pages'
-        },
-        case_sensitive: {
-          type: 'boolean',
-          description: 'Optional: Whether to perform case-sensitive search (default: true, matching Roam\'s native behavior)',
-          default: true
         }
       },
       required: ['text']
@@ -405,11 +392,6 @@ export const toolSchemas = {
           type: 'boolean',
           description: 'Whether to include the content of matching blocks/pages',
           default: true,
-        },
-        case_sensitive: {
-          type: 'boolean',
-          description: 'Optional: Whether to perform case-sensitive matching (default: true, matching Roam\'s native behavior)',
-          default: true
         }
       },
       required: ['start_date', 'type', 'scope']

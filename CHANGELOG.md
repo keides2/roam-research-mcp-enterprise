@@ -1,3 +1,11 @@
+v0.22.0
+
+- Restructured search functionality into dedicated directory with proper TypeScript support
+- Fixed TypeScript errors and import paths throughout the codebase
+- Improved outline creation to maintain exact input array order
+- Enhanced recall() method to fetch memories from both tag searches and dedicated memories page
+- Maintained backward compatibility while improving code organization
+
 v0.21.0
 
 - Added roam_recall tool to recall memories from all tags and the page itself.

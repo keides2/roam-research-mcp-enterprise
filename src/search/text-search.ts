@@ -6,7 +6,6 @@ import { SearchUtils } from './utils.js';
 export interface TextSearchParams {
   text: string;
   page_title_uid?: string;
-  case_sensitive?: boolean;
 }
 
 export class TextSearchHandler extends BaseSearchHandler {
@@ -18,7 +17,7 @@ export class TextSearchHandler extends BaseSearchHandler {
   }
 
   async execute(): Promise<SearchResult> {
-    const { text, page_title_uid, case_sensitive = false } = this.params;
+    const { text, page_title_uid } = this.params;
 
     // Get target page UID if provided for scoped search
     let targetPageUid: string | undefined;
@@ -31,8 +30,7 @@ export class TextSearchHandler extends BaseSearchHandler {
                       :in $ ?search-text
                       :where 
                       [?b :block/string ?block-str]
-                      [(clojure.string/includes? ${case_sensitive ? '?block-str' : '(clojure.string/lower-case ?block-str)'} 
-                                               ${case_sensitive ? '?search-text' : '(clojure.string/lower-case ?search-text)'})]
+                      [(clojure.string/includes? ?block-str ?search-text)]
                       [?b :block/uid ?block-uid]
                       [?b :block/page ?p]
                       [?p :node/title ?page-title]]`;
@@ -40,7 +38,7 @@ export class TextSearchHandler extends BaseSearchHandler {
 
     const results = await q(this.graph, queryStr, queryParams) as [string, string, string?][];
     
-    const searchDescription = `containing "${text}"${case_sensitive ? ' (case sensitive)' : ''}`;
+    const searchDescription = `containing "${text}"`;
     return SearchUtils.formatSearchResults(results, searchDescription, !targetPageUid);
   }
 }
