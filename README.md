@@ -47,10 +47,10 @@ The server provides fourteen powerful tools for interacting with Roam Research:
 
 ## Setup
 
-1. Create a Roam Research API token:
+1. Create a [Roam Research API token](https://x.com/RoamResearch/status/1789358175474327881):
 
    - Go to your graph settings
-   - Navigate to the "API tokens" section
+   - Navigate to the "API tokens" section (Settings > "Graph" tab > "API Tokens" section and click on the "+ New API Token" button)
    - Create a new token
 
 2. Configure the environment variables:
