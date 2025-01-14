@@ -1,3 +1,7 @@
+v.0.22.1
+
+- Important description change in roam_remember
+
 v0.22.0
 
 - Restructured search functionality into dedicated directory with proper TypeScript support
