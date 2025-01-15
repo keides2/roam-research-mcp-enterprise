@@ -1,3 +1,7 @@
+v.0.23.1
+
+- Fixed roam_outline tool not writing properly
+
 v.0.23.0
 
 - Added advanced, more flexible datomic query
