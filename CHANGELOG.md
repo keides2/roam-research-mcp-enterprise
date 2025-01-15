@@ -1,3 +1,7 @@
+v.0.23.0
+
+- Added advanced, more flexible datomic query
+
 v.0.22.1
 
 - Important description change in roam_remember

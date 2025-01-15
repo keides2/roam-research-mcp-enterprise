@@ -5,6 +5,12 @@ export interface BaseSearchParams {
   page_title_uid?: string;
 }
 
+// Datomic search parameters
+export interface DatomicSearchParams {
+  query: string;
+  inputs?: unknown[];
+}
+
 // Tag search parameters
 export interface TagSearchParams extends BaseSearchParams {
   primary_tag: string;

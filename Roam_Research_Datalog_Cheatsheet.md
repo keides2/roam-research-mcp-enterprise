@@ -1,4 +1,4 @@
-# Roam Research Datalog Cheatsheet
+# Roam Research Datalog Cheatsheet ([Gist](https://gist.github.com/2b3pro/231e4f230ed41e3f52e8a89ebf49848b))
 
 ## Basic Structure
 
@@ -28,7 +28,7 @@
 :node/title       # Page title (pages only)
 ```
 
-### Paragraph-Specific Attributes
+### Block Attributes
 
 ```clojure
 :block/page      # Reference to page entity-id
@@ -46,27 +46,116 @@
 :block/text-align   # 'left', 'center', 'right', 'justify'
 ```
 
-## Query Syntax
+## Query Examples
 
-### Basic Query
+### Graph Statistics
+
+#### Count Pages
 
 ```clojure
-[:find ?variable
- :where [?entity :attribute ?variable]]
+[:find (count ?title)
+ :where [_ :node/title ?title]]
 ```
 
-### Query with Input Parameters
+#### Count Blocks
 
 ```clojure
-[:find ?title ?uid
- :in $ ?block_ref
+[:find (count ?string)
+ :where [_ :block/string ?string]]
+```
+
+#### Find Blocks with Most Descendants
+
+```clojure
+[:find ?ancestor (count ?block)
+ :in $ %
  :where
- [?b :block/uid ?block_ref]
- [?b :block/string ?title]
- [?b :block/uid ?uid]]
+ [?ancestor :block/string]
+ [?block :block/string]
+ (ancestor ?block ?ancestor)]
 ```
 
-### Predicates
+### Page Queries
+
+#### List Pages in Namespace
+
+```clojure
+[:find ?title:name ?title:uid ?time:date
+ :where
+ [?page :node/title ?title:name]
+ [?page :block/uid ?title:uid]
+ [?page :edit/time ?time:date]
+ [(clojure.string/starts-with? ?title:name "roam/")]]
+```
+
+#### Find Pages Modified Today
+
+```clojure
+[:find ?page_title:name ?page_title:uid
+ :in $ ?start_of_day %
+ :where
+ [?page :node/title ?page_title:name]
+ [?page :block/uid ?page_title:uid]
+ (ancestor ?block ?page)
+ [?block :edit/time ?time]
+ [(> ?time ?start_of_day)]]
+```
+
+### Block Queries
+
+#### Find Direct Children
+
+```clojure
+[:find ?block_string
+ :where
+ [?p :node/title "Page Title"]
+ [?p :block/children ?c]
+ [?c :block/string ?block_string]]
+```
+
+#### Find with Pull Pattern
+
+```clojure
+[:find (pull ?e [*{:block/children [*]}])
+ :where [?e :node/title "Page Title"]]
+```
+
+### Advanced Queries
+
+#### Search with Case-Insensitive Pattern
+
+```javascript
+let fragment = "search_term";
+let query = `[:find ?title:name ?title:uid ?time:date
+              :where [?page :node/title ?title:name]
+                    [?page :block/uid ?title:uid]
+                    [?page :edit/time ?time:date]]`;
+
+let results = window.roamAlphaAPI
+  .q(query)
+  .filter((item, index) => item[0].toLowerCase().indexOf(fragment) > 0)
+  .sort((a, b) => a[0].localeCompare(b[0]));
+```
+
+#### List Namespace Attributes
+
+```clojure
+[:find ?namespace ?attribute
+ :where [_ ?attribute]
+ [(namespace ?attribute) ?namespace]]
+```
+
+## Tips
+
+- Use `:block/parents` for ancestors (includes all levels)
+- Use `:block/children` for immediate descendants only
+- Combine `clojure.string` functions for complex text matching
+- Use `distinct` to avoid duplicate results
+- Use Pull patterns for hierarchical data retrieval
+- Handle case sensitivity in string operations carefully
+- Chain ancestry rules for multi-level traversal
+
+## Common Predicates
 
 Available functions:
 
@@ -76,194 +165,19 @@ Available functions:
 - count
 - <, >, <=, >=, =, not=, !=
 
-Example:
+## Aggregates
 
-```clojure
-[:find ?string ?size
- :where
- [?b :block/string ?string]
- [(count ?string) ?size]]
-```
+Available functions:
 
-### Aggregates
+- sum
+- max
+- min
+- avg
+- count
+- distinct
 
-Available functions: sum, max, min, avg, count, distinct
+# Sources/References:
 
-Example:
-
-```clojure
-[:find (distinct ?type)
- :where [_ :children/view-type ?type]]
-```
-
-### Rules and Ancestors
-
-#### Basic Ancestor Rule
-
-```clojure
-[[(ancestor ?child ?parent)
-  [?parent :block/children ?child]]
- [(ancestor ?child ?grand_parent)
-  [?parent :block/children ?child]
-  (ancestor ?parent ?grand_parent)]]
-```
-
-#### Find All Descendants
-
-```clojure
-[:find ?block (count ?child)
- :in $ ?block_uid %
- :where
- [?block :block/uid ?block_uid]
- (ancestor ?child ?block)]
-```
-
-#### Find Direct Children Only
-
-```clojure
-[:find ?child_string
- :where
- [?parent :block/uid "parent-block-uid"]
- [?parent :block/children ?child]
- [?child :block/string ?child_string]]
-```
-
-#### Find All Ancestors
-
-```clojure
-[:find ?ancestor_string
- :where
- [?block :block/uid "block-uid"]
- [?block :block/parents ?ancestor]
- [?ancestor :block/string ?ancestor_string]]
-```
-
-## Common Queries
-
-### Find All Pages
-
-```clojure
-[:find ?p ?title
- :where [?p :node/title ?title]]
-```
-
-### Find Block by Reference
-
-```clojure
-[:find ?string
- :where
- [?b :block/uid "block-ref-here"]
- [?b :block/string ?string]]
-```
-
-### Find Modified Blocks After Date
-
-```clojure
-[:find ?block_ref ?string
- :in $ ?start_of_day
- :where
- [?b :edit/time ?time]
- [(> ?time ?start_of_day)]
- [?b :block/uid ?block_ref]
- [?b :block/string ?string]]
-```
-
-### Search Page Titles
-
-```clojure
-[:find ?title ?uid
- :where
- [?page :node/title ?title]
- [?page :block/uid ?uid]
- [(clojure.string/includes? ?title "search-term")]]
-```
-
-## Tips
-
-- Use `:block/parents` for ancestors (includes all levels)
-- Use `:block/children` for immediate descendants only
-- Combine `clojure.string` functions for complex text matching
-- Use `distinct` to avoid duplicate results
-- Remember to handle case sensitivity in string operations
-
-## JavaScript Integration
-
-```javascript
-// Basic query
-window.roamAlphaAPI.q(`
-  [:find ?title
-   :where [?p :node/title ?title]]
-`);
-
-// Query with parameters
-window.roamAlphaAPI.q(
-  `
-  [:find ?title
-   :in $ ?term
-   :where 
-   [?p :node/title ?title]
-   [(clojure.string/includes? ?title ?term)]]
-`,
-  "search-term"
-);
-
-// Complex example: Find pages with specific tag excluding a container
-// Credit: David Bieber (https://gist.github.com/dbieber/f54996410a10d755b5ea61dd9923164b)
-let container = "Tree of knowledge";
-let tag = "zettel";
-
-let ancestorrule = `[ 
-   [(ancestor ?child ?parent) 
-    [?parent :block/children ?child]]
-   [(ancestor ?child ?a) 
-    [?parent :block/children ?child] 
-    (ancestor ?parent ?a)]
-]`;
-
-let blocks = window.roamAlphaAPI.q(
-  `
-[:find ?page_title
-  :in $ % ?container_title ?tag_text
-  :where 
-    [?container_page :node/title ?container_title]
-    [?page :node/title ?page_title]
-    (ancestor ?tagged_block ?page)
-    [?tagged_block :block/refs ?tag_page]
-    [?tag_page :node/title ?tag_text]
-    (not (ancestor ?container_block ?container_page)
-         [?container_block :block/refs ?page])
-]`,
-  ancestorrule,
-  container,
-  tag
-);
-```
-
-```javascript
-// Find Blocks on a Specific Page
-let ancestorrule = `[ 
-   [ (ancestor ?b ?a) 
-        [?a :block/children ?b] ] 
-   [ (ancestor ?b ?a) 
-        [?parent :block/children ?b ] 
-        (ancestor ?parent ?a) ] ] ]`;
-let blocks = window.roamAlphaAPI.q(
-  `[ 
-  :find 
-      ?string
-  :in $ ?pagetitle % 
-  :where 
-      [?block :block/string ?string] 
-      [?page :node/title ?pagetitle] 
-      (ancestor ?block ?page)
-  ]`,
-  "Roam Research",
-  ancestorrule
-);
-
-blocks
-  .map((data, index) => {
-    return data[0];
-  })
-  .join("\n");
-```
+- [Deep Dive Into Roam's Data Structure - Why Roam is Much More Than a Note Taking App](https://www.zsolt.blog/2021/01/Roam-Data-Structure-Query.html)
+- [Query Reference | Datomic](https://docs.datomic.com/query/query-data-reference.html)
+- [Datalog Queries for Roam Research | David Bieber](https://davidbieber.com/snippets/2020-12-22-datalog-queries-for-roam-research/)

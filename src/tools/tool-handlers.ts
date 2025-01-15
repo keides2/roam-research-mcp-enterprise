@@ -5,6 +5,7 @@ import { SearchOperations } from './operations/search/index.js';
 import { MemoryOperations } from './operations/memory.js';
 import { TodoOperations } from './operations/todos.js';
 import { OutlineOperations } from './operations/outline.js';
+import { DatomicSearchHandlerImpl } from './operations/search/handlers.js';
 
 export class ToolHandlers {
   private pageOps: PageOperations;
@@ -99,6 +100,12 @@ export class ToolHandlers {
     include_content: boolean;
   }) {
     return this.searchOps.searchByDate(params);
+  }
+
+  // Datomic query
+  async executeDatomicQuery(params: { query: string; inputs?: unknown[] }) {
+    const handler = new DatomicSearchHandlerImpl(this.graph, params);
+    return handler.execute();
   }
 
   // Memory Operations

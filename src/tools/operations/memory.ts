@@ -89,12 +89,9 @@ export class MemoryOperations {
 
   async recall(): Promise<{ success: boolean; memories: string[] }> {
     // Get memories tag from environment
-    const memoriesTag = process.env.MEMORIES_TAG;
+    var memoriesTag = process.env.MEMORIES_TAG;
     if (!memoriesTag) {
-      throw new McpError(
-        ErrorCode.InternalError,
-        'MEMORIES_TAG environment variable not set'
-      );
+      memoriesTag = "Memories"
     }
 
     // Extract the tag text, removing any formatting

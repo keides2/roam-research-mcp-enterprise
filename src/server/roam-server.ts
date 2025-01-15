@@ -48,7 +48,8 @@ export class RoamServer {
               roam_search_by_text: {},
               roam_update_block: {},
               roam_update_blocks: {},
-              roam_search_by_date: {}
+              roam_search_by_date: {},
+              roam_datomic_query: {}
             },
           },
       }
@@ -300,6 +301,17 @@ export class RoamServer {
             };
             
             const result = await this.toolHandlers.updateBlocks(updates);
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
+          case 'roam_datomic_query': {
+            const { query, inputs } = request.params.arguments as {
+              query: string;
+              inputs?: unknown[];
+            };
+            const result = await this.toolHandlers.executeDatomicQuery({ query, inputs });
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };

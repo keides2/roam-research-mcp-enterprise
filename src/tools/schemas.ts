@@ -426,5 +426,26 @@ export const toolSchemas = {
       properties: {},
       required: []
     }
+  },
+  roam_datomic_query: {
+    name: 'roam_datomic_query',
+    description: 'Execute a custom Datomic query on the Roam graph. This provides direct access to Roam\'s query engine for advanced data retrieval. Note: The Roam graph is case-sensitive.\nA list of some of Roam\'s data model Namespaces and Attributes: ancestor (descendants), attrs (lookup), block (children, heading, open, order, page, parents, props, refs, string, text-align, uid), children (view-type), create (email, time), descendant (ancestors), edit (email, seen-by, time), entity (attrs), log (id), node (title), page (uid, title), refs (text).\nPredicates (clojure.string/includes?, clojure.string/starts-with?, clojure.string/ends-with?, <, >, <=, >=, =, not=, !=).\nAggregates (distinct, count, sum, max, min, avg).\nTips: Use :block/parents for all ancestor levels, :block/children for direct descendants only; combine clojure.string for complex matching, use distinct to deduplicate, leverage Pull patterns for hierarchies, handle case-sensitivity carefully, and chain ancestry rules for multi-level queries.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'The Datomic query to execute (in Datalog syntax)'
+        },
+        inputs: {
+          type: 'array',
+          description: 'Optional array of input parameters for the query',
+          items: {
+            type: 'string'
+          }
+        }
+      },
+      required: ['query']
+    }
   }
 };

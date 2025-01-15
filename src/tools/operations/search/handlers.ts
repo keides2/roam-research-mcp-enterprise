@@ -1,12 +1,13 @@
 import { Graph } from '@roam-research/roam-api-sdk';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { TagSearchHandler, BlockRefSearchHandler, HierarchySearchHandler, TextSearchHandler } from '../../../search/index.js';
+import { TagSearchHandler, BlockRefSearchHandler, HierarchySearchHandler, TextSearchHandler, DatomicSearchHandler } from '../../../search/index.js';
 import type {
   TagSearchParams,
   BlockRefSearchParams,
   HierarchySearchParams,
   TextSearchParams,
-  SearchHandlerResult
+  SearchHandlerResult,
+  DatomicSearchParams
 } from './types.js';
 
 // Base class for all search handlers
@@ -59,6 +60,18 @@ export class TextSearchHandlerImpl extends BaseSearchHandler {
 
   async execute() {
     const handler = new TextSearchHandler(this.graph, this.params);
+    return handler.execute();
+  }
+}
+
+// Datomic query handler
+export class DatomicSearchHandlerImpl extends BaseSearchHandler {
+  constructor(graph: Graph, private params: DatomicSearchParams) {
+    super(graph);
+  }
+
+  async execute() {
+    const handler = new DatomicSearchHandler(this.graph, this.params);
     return handler.execute();
   }
 }
