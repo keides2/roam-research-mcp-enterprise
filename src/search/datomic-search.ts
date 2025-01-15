@@ -1,6 +1,7 @@
 import { q } from '@roam-research/roam-api-sdk';
 import type { Graph } from '@roam-research/roam-api-sdk';
 import { BaseSearchHandler, SearchResult } from './types.js';
+// import { resolveRefs } from '../helpers/refs.js';
 
 export interface DatomicSearchParams {
   query: string;

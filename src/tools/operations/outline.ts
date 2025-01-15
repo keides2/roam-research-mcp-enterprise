@@ -82,19 +82,15 @@ export class OutlineOperations {
 
         // If still not found and this is the first retry, try to create the page
         if (retry === 0) {
-          try {
-            await createPage(this.graph, {
-              action: 'create-page',
-              page: { title: titleOrUid }
-            });
-            // Wait a bit and continue to next retry to check if page was created
-            await new Promise(resolve => setTimeout(resolve, delayMs));
-            continue;
-          } catch (error) {
-            console.error('Error creating page:', error);
-            // Continue to next retry
-            continue;
-          }
+          const success = await createPage(this.graph, {
+            action: 'create-page',
+            page: { title: titleOrUid }
+          });
+
+          // Even if createPage returns false, the page might still have been created
+          // Wait a bit and continue to next retry
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          continue;
         }
 
         if (retry < maxRetries - 1) {
@@ -114,21 +110,14 @@ export class OutlineOperations {
     );
 
     // Helper function to find block with improved relationship checks
-    const findBlockWithRetry = async (
-      pageUid: string, 
-      blockString: string, 
-      maxRetries = 5, 
-      initialDelay = 1000,
-      case_sensitive = false
-    ): Promise<string> => {
+    const findBlockWithRetry = async (pageUid: string, blockString: string, maxRetries = 5, initialDelay = 1000): Promise<string> => {
       // Try multiple query strategies
       const queries = [
         // Strategy 1: Direct page and string match
         `[:find ?b-uid ?order
           :where [?p :block/uid "${pageUid}"]
                  [?b :block/page ?p]
-                 [?b :block/string ?block-str]
-                 [(${case_sensitive ? '=' : 'clojure.string/equals-ignore-case'} ?block-str "${blockString}")]
+                 [?b :block/string "${blockString}"]
                  [?b :block/order ?order]
                  [?b :block/uid ?b-uid]]`,
         
@@ -136,8 +125,7 @@ export class OutlineOperations {
         `[:find ?b-uid ?order
           :where [?p :block/uid "${pageUid}"]
                  [?b :block/parents ?p]
-                 [?b :block/string ?block-str]
-                 [(${case_sensitive ? '=' : 'clojure.string/equals-ignore-case'} ?block-str "${blockString}")]
+                 [?b :block/string "${blockString}"]
                  [?b :block/order ?order]
                  [?b :block/uid ?b-uid]]`,
         
@@ -146,8 +134,7 @@ export class OutlineOperations {
           :where [?p :block/uid "${pageUid}"]
                  [?b :block/page ?page]
                  [?p :block/page ?page]
-                 [?b :block/string ?block-str]
-                 [(${case_sensitive ? '=' : 'clojure.string/equals-ignore-case'} ?block-str "${blockString}")]
+                 [?b :block/string "${blockString}"]
                  [?b :block/order ?order]
                  [?b :block/uid ?b-uid]]`
       ];
@@ -182,8 +169,7 @@ export class OutlineOperations {
       parentUid: string,
       maxRetries = 5,
       initialDelay = 1000,
-      isRetry = false,
-      case_sensitive = false
+      isRetry = false
     ): Promise<string> => {
       try {
         // Initial delay before any operations
@@ -194,26 +180,26 @@ export class OutlineOperations {
         for (let retry = 0; retry < maxRetries; retry++) {
           console.log(`Attempt ${retry + 1}/${maxRetries} to create block "${content}" under "${parentUid}"`);
 
+          // Create block
+          const success = await createBlock(this.graph, {
+            action: 'create-block',
+            location: {
+              'parent-uid': parentUid,
+              order: 'last'
+            },
+            block: { string: content }
+          });
+
+          // Wait with exponential backoff
+          const delay = initialDelay * Math.pow(2, retry);
+          await new Promise(resolve => setTimeout(resolve, delay));
+
           try {
-            // Create block
-            await createBlock(this.graph, {
-              action: 'create-block',
-              location: {
-                'parent-uid': parentUid,
-                order: 'first'
-              },
-              block: { string: content }
-            });
-
-            // Wait with exponential backoff
-            const delay = initialDelay * Math.pow(2, retry);
-            await new Promise(resolve => setTimeout(resolve, delay));
-
             // Try to find the block using our improved findBlockWithRetry
-            return await findBlockWithRetry(parentUid, content, maxRetries, initialDelay, case_sensitive);
+            return await findBlockWithRetry(parentUid, content);
           } catch (error: any) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.log(`Failed to create/find block on attempt ${retry + 1}: ${errorMessage}`);
+            console.log(`Failed to find block on attempt ${retry + 1}: ${errorMessage}`);
             if (retry === maxRetries - 1) throw error;
           }
         }
@@ -229,7 +215,7 @@ export class OutlineOperations {
         // Otherwise, try one more time with a clean slate
         console.log(`Retrying block creation for "${content}" with fresh attempt`);
         await new Promise(resolve => setTimeout(resolve, initialDelay * 2));
-        return createAndVerifyBlock(content, parentUid, maxRetries, initialDelay, true, case_sensitive);
+        return createAndVerifyBlock(content, parentUid, maxRetries, initialDelay, true);
       }
     };
 
