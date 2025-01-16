@@ -34,7 +34,7 @@ export const toolSchemas = {
   },
   roam_create_page: {
     name: 'roam_create_page',
-    description: 'Create a new standalone page in Roam from markdown with given title. Best for hierarchical content, reference materials, markdown tables, and topics that deserve their own namespace. Optional initial content will be properly nested as blocks.',
+    description: 'Create a new standalone page in Roam from markdown with given title. Ideal for single-level content, reference materials, markdown tables, and topics that deserve their own namespace. For outlines or nested content, use the roam_create_outline tool. Optional initial content will be properly nested as blocks.',
     inputSchema: {
       type: 'object',
       properties: {

@@ -112,7 +112,7 @@ export class PageOperations {
           // Use import_nested_markdown functionality
           const convertedContent = convertToRoamMarkdown(content);
           const nodes = parseMarkdown(convertedContent);
-          const actions = convertToRoamActions(nodes, pageUid, 'last');
+          const actions = convertToRoamActions(nodes, pageUid, 'first');
           const result = await batchActions(this.graph, {
             action: 'batch-actions',
             actions
