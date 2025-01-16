@@ -1,4 +1,5 @@
 import { Graph } from '@roam-research/roam-api-sdk';
+import type { SearchResult } from '../../types/index.js';
 import type {
   TagSearchParams,
   BlockRefSearchParams,
@@ -10,7 +11,8 @@ import {
   TagSearchHandlerImpl,
   BlockRefSearchHandlerImpl,
   HierarchySearchHandlerImpl,
-  TextSearchHandlerImpl
+  TextSearchHandlerImpl,
+  StatusSearchHandlerImpl
 } from './handlers.js';
 
 export class SearchOperations {
@@ -22,8 +24,8 @@ export class SearchOperations {
     include?: string,
     exclude?: string
   ): Promise<SearchHandlerResult> {
-    const handler = new TagSearchHandlerImpl(this.graph, {
-      primary_tag: `{{[[${status}]]}}`,
+    const handler = new StatusSearchHandlerImpl(this.graph, {
+      status,
       page_title_uid,
     });
     const result = await handler.execute();
@@ -33,7 +35,7 @@ export class SearchOperations {
 
     if (include) {
       const includeTerms = include.split(',').map(term => term.trim());
-      matches = matches.filter(match => {
+      matches = matches.filter((match: SearchResult) => {
         const matchContent = match.content;
         const matchTitle = match.page_title;
         const terms = includeTerms;
@@ -46,7 +48,7 @@ export class SearchOperations {
 
     if (exclude) {
       const excludeTerms = exclude.split(',').map(term => term.trim());
-      matches = matches.filter(match => {
+      matches = matches.filter((match: SearchResult) => {
         const matchContent = match.content;
         const matchTitle = match.page_title;
         const terms = excludeTerms;

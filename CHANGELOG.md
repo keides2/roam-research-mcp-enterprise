@@ -1,3 +1,11 @@
+v.0.24
+
+- Fixed searchByStatus for TODO checks
+
+v.0.23.2
+
+- Fixed create_page tool as first-level blocks were created in reversed order
+
 v.0.23.1
 
 - Fixed roam_outline tool not writing properly

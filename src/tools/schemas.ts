@@ -34,7 +34,7 @@ export const toolSchemas = {
   },
   roam_create_page: {
     name: 'roam_create_page',
-    description: 'Create a new standalone page in Roam from markdown with given title. Ideal for single-level content, reference materials, markdown tables, and topics that deserve their own namespace. For outlines or nested content, use the roam_create_outline tool. Optional initial content will be properly nested as blocks.',
+    description: 'Create a new standalone page in Roam with optional content using markdown-style formatting. The nesting structure is inferred from markdown indentation (spaces). Best for:\n- Creating foundational concept pages that other pages will link to/from\n- Establishing new topic areas that need their own namespace\n- Setting up reference materials or documentation\n- Making permanent collections of information.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -44,7 +44,7 @@ export const toolSchemas = {
         },
         content: {
           type: 'string',
-          description: 'Initial content for the page (optional)',
+          description: 'Initial content for the page (optional). Each line becomes a separate block. Indentation (using spaces or tabs) determines the nesting level of each block.',
         },
       },
       required: ['title'],
@@ -74,7 +74,7 @@ export const toolSchemas = {
   },
   roam_create_outline: {
     name: 'roam_create_outline',
-    description: 'Create a structured outline with nested structure in Roam from an array of items with explicit levels. Can be added on a specific page or under a specific block. Ideal for saving a conversation with an LLM response, research, or organizing thoughts.',
+    description: 'Add a structured outline to an existing page or block (by title text or uid), with customizable nesting levels. Best for:\n- Adding supplementary structured content to existing pages\n- Creating temporary or working outlines (meeting notes, brainstorms)\n- Organizing thoughts or research under a specific topic\n- Breaking down subtopics or components of a larger concept',
     inputSchema: {
       type: 'object',
       properties: {
@@ -88,7 +88,7 @@ export const toolSchemas = {
         },
         outline: {
           type: 'array',
-          description: 'Array of outline items with block text and level',
+          description: 'Array of outline items with block text and explicit nesting level',
           items: {
             type: 'object',
             properties: {
@@ -429,7 +429,7 @@ export const toolSchemas = {
   },
   roam_datomic_query: {
     name: 'roam_datomic_query',
-    description: 'Execute a custom Datomic query on the Roam graph beyond the available search tools. This provides direct access to Roam\'s query engine for advanced data retrieval. Note: The Roam graph is case-sensitive.\nA list of some of Roam\'s data model Namespaces and Attributes: ancestor (descendants), attrs (lookup), block (children, heading, open, order, page, parents, props, refs, string, text-align, uid), children (view-type), create (email, time), descendant (ancestors), edit (email, seen-by, time), entity (attrs), log (id), node (title), page (uid, title), refs (text).\nPredicates (clojure.string/includes?, clojure.string/starts-with?, clojure.string/ends-with?, <, >, <=, >=, =, not=, !=).\nAggregates (distinct, count, sum, max, min, avg).\nTips: Use :block/parents for all ancestor levels, :block/children for direct descendants only; combine clojure.string for complex matching, use distinct to deduplicate, leverage Pull patterns for hierarchies, handle case-sensitivity carefully, and chain ancestry rules for multi-level queries.',
+    description: 'Execute a custom Datomic query on the Roam graph beyond the available search tools. This provides direct access to Roam\'s query engine for advanced data retrieval. Note: Roam graph is case-sensitive.\nList of some of Roam\'s data model Namespaces and Attributes: ancestor (descendants), attrs (lookup), block (children, heading, open, order, page, parents, props, refs, string, text-align, uid), children (view-type), create (email, time), descendant (ancestors), edit (email, seen-by, time), entity (attrs), log (id), node (title), page (uid, title), refs (text).\nPredicates (clojure.string/includes?, clojure.string/starts-with?, clojure.string/ends-with?, <, >, <=, >=, =, not=, !=).\nAggregates (distinct, count, sum, max, min, avg, limit).\nTips: Use :block/parents for all ancestor levels, :block/children for direct descendants only; combine clojure.string for complex matching, use distinct to deduplicate, leverage Pull patterns for hierarchies, handle case-sensitivity carefully, and chain ancestry rules for multi-level queries.',
     inputSchema: {
       type: 'object',
       properties: {

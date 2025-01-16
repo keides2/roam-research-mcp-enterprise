@@ -34,6 +34,11 @@ export interface TextSearchParams extends BaseSearchParams {
   text: string;
 }
 
+// Status search parameters
+export interface StatusSearchParams extends BaseSearchParams {
+  status: 'TODO' | 'DONE';
+}
+
 // Common search result type
 export interface SearchHandlerResult {
   success: boolean;
