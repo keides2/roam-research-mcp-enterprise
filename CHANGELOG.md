@@ -1,6 +1,7 @@
-v.0.24
+v.0.24.1
 
 - Fixed searchByStatus for TODO checks
+- Added resolution of references to various tools
 
 v.0.23.2
 

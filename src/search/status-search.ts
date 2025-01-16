@@ -2,6 +2,7 @@ import { q } from '@roam-research/roam-api-sdk';
 import type { Graph } from '@roam-research/roam-api-sdk';
 import { BaseSearchHandler, SearchResult } from './types.js';
 import { SearchUtils } from './utils.js';
+import { resolveRefs } from '../tools/helpers/refs.js';
 
 export interface StatusSearchParams {
   status: 'TODO' | 'DONE';
@@ -49,8 +50,16 @@ export class StatusSearchHandler extends BaseSearchHandler {
       queryParams = [status];
     }
 
-    const results = await q(this.graph, queryStr, queryParams) as [string, string, string?][];
+    const rawResults = await q(this.graph, queryStr, queryParams) as [string, string, string?][];
     
-    return SearchUtils.formatSearchResults(results, `with status ${status}`, !targetPageUid);
+    // Resolve block references in content
+    const resolvedResults = await Promise.all(
+      rawResults.map(async ([uid, content, pageTitle]) => {
+        const resolvedContent = await resolveRefs(this.graph, content);
+        return [uid, resolvedContent, pageTitle] as [string, string, string?];
+      })
+    );
+    
+    return SearchUtils.formatSearchResults(resolvedResults, `with status ${status}`, !targetPageUid);
   }
 }

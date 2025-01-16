@@ -2,6 +2,7 @@ import { q } from '@roam-research/roam-api-sdk';
 import type { Graph } from '@roam-research/roam-api-sdk';
 import { BaseSearchHandler, SearchResult } from './types.js';
 import { SearchUtils } from './utils.js';
+import { resolveRefs } from '../tools/helpers/refs.js';
 
 export interface HierarchySearchParams {
   parent_uid?: string;  // Search for children of this block
@@ -99,14 +100,17 @@ export class HierarchySearchHandler extends BaseSearchHandler {
       }
     }
 
-    const results = await q(this.graph, queryStr, queryParams) as [string, string, string?, number?][];
+    const rawResults = await q(this.graph, queryStr, queryParams) as [string, string, string?, number?][];
     
-    // Format results to include depth information
-    const matches = results.map(([uid, content, pageTitle, depth]) => ({
-      block_uid: uid,
-      content,
-      depth: depth || 1,
-      ...(pageTitle && { page_title: pageTitle })
+    // Resolve block references and format results to include depth information
+    const matches = await Promise.all(rawResults.map(async ([uid, content, pageTitle, depth]) => {
+      const resolvedContent = await resolveRefs(this.graph, content);
+      return {
+        block_uid: uid,
+        content: resolvedContent,
+        depth: depth || 1,
+        ...(pageTitle && { page_title: pageTitle })
+      };
     }));
 
     const searchDescription = parent_uid

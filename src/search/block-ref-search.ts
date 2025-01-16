@@ -2,6 +2,7 @@ import { q } from '@roam-research/roam-api-sdk';
 import type { Graph } from '@roam-research/roam-api-sdk';
 import { BaseSearchHandler, SearchResult } from './types.js';
 import { SearchUtils } from './utils.js';
+import { resolveRefs } from '../tools/helpers/refs.js';
 
 export interface BlockRefSearchParams {
   block_uid?: string;
@@ -73,12 +74,20 @@ export class BlockRefSearchHandler extends BaseSearchHandler {
       }
     }
 
-    const results = await q(this.graph, queryStr, queryParams) as [string, string, string?][];
+    const rawResults = await q(this.graph, queryStr, queryParams) as [string, string, string?][];
+    
+    // Resolve block references in content
+    const resolvedResults = await Promise.all(
+      rawResults.map(async ([uid, content, pageTitle]) => {
+        const resolvedContent = await resolveRefs(this.graph, content);
+        return [uid, resolvedContent, pageTitle] as [string, string, string?];
+      })
+    );
     
     const searchDescription = block_uid 
       ? `referencing block ((${block_uid}))`
       : 'containing block references';
       
-    return SearchUtils.formatSearchResults(results, searchDescription, !targetPageUid);
+    return SearchUtils.formatSearchResults(resolvedResults, searchDescription, !targetPageUid);
   }
 }
