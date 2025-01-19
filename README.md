@@ -30,6 +30,16 @@ npm run build
 
 The server provides powerful tools for interacting with Roam Research:
 
+- Environment variable handling with .env support
+- Comprehensive input validation
+- Case-insensitive page title matching
+- Recursive block reference resolution
+- Markdown parsing and conversion
+- Daily page integration
+- Detailed debug logging
+- Efficient batch operations
+- Hierarchical outline creation
+
 1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
 2. `roam_create_page`: Create new pages with optional content
 3. `roam_create_block`: Create new blocks in a page (defaults to today's daily page)
@@ -717,25 +727,39 @@ Each error response includes:
 
 ## Development
 
-The server is built with TypeScript and includes:
+### Building
 
-- Environment variable handling with .env support
-- Comprehensive input validation
-- Case-insensitive page title matching
-- Recursive block reference resolution
-- Markdown parsing and conversion
-- Daily page integration
-- Detailed debug logging
-- Efficient batch operations
-- Hierarchical outline creation
+To build the server:
 
-To modify or extend the server:
+```bash
+npm install
+npm run build
+```
 
-1. Clone the repository
-2. Install dependencies with `npm install`
-3. Make changes to the source files
-4. Build with `npm run build`
-5. Test locally by configuring environment variables
+This will:
+
+1. Install all required dependencies
+2. Compile TypeScript to JavaScript
+3. Make the output file executable
+
+You can also use `npm run watch` during development to automatically recompile when files change.
+
+### Testing with MCP Inspector
+
+The MCP Inspector is a tool that helps test and debug MCP servers. To test the server:
+
+```bash
+# Inspect with npx:
+npx @modelcontextprotocol/inspector node build/index.js
+```
+
+This will:
+
+1. Start the server in inspector mode
+2. Provide an interactive interface to:
+   - List available tools and resources
+   - Execute tools with custom parameters
+   - View tool responses and error handling
 
 ## License
 
