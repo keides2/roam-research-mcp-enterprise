@@ -25,8 +25,8 @@ export class ToolHandlers {
   }
 
   // Page Operations
-  async findPagesModifiedToday() {
-    return this.pageOps.findPagesModifiedToday();
+  async findPagesModifiedToday(num_pages: number = 10) {
+    return this.pageOps.findPagesModifiedToday(num_pages);
   }
 
   async createPage(title: string, content?: string) {

@@ -245,11 +245,17 @@ export const toolSchemas = {
   },
   roam_find_pages_modified_today: {
     name: 'roam_find_pages_modified_today',
-    description: 'Find all pages that have been modified today (since midnight).',
+    description: 'Find pages that have been modified today (since midnight), with limit.',
     inputSchema: {
       type: 'object',
-      properties: {},
-      required: []
+      properties: {
+        num_pages: {
+          type: 'integer',
+          description: 'Number of result pages to retrieve (default: 10)',
+          default: 10
+        },        
+      },
+      required: ['num_pages']
     }
   },
   roam_search_by_text: {

@@ -13,7 +13,7 @@ import {
 export class PageOperations {
   constructor(private graph: Graph) {}
 
-  async findPagesModifiedToday() {
+  async findPagesModifiedToday(num_pages: number = 10) {
     // Define ancestor rule for traversing block hierarchy
     const ancestorRule = `[
       [ (ancestor ?b ?a)
@@ -37,7 +37,8 @@ export class PageOperations {
           [?page :node/title ?title]
           (ancestor ?block ?page)
           [?block :edit/time ?time]
-          [(> ?time ?start_of_day)]]`,
+          [(> ?time ?start_of_day)]]
+          :limit ${num_pages}`,
         [startOfDay.getTime(), ancestorRule]
       ) as [string][];
 
