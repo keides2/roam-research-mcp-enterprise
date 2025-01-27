@@ -48,7 +48,7 @@ The server provides powerful tools for interacting with Roam Research:
 6. `roam_create_outline`: Create hierarchical outlines with proper nesting and structure
 7. `roam_search_block_refs`: Search for block references within pages or across the graph
 8. `roam_search_hierarchy`: Navigate and search through block parent-child relationships
-9. `find_pages_modified_today`: Find all pages that have been modified since midnight today
+9. `roam_find_pages_modified_today`: Find all pages that have been modified since midnight today
 10. `roam_search_by_text`: Search for blocks containing specific text across all pages or within a specific page
 11. `roam_update_block`: Update block content with direct text or pattern-based transformations
 12. `roam_search_by_date`: Search for blocks and pages based on creation or modification dates
@@ -555,7 +555,7 @@ Returns:
 Find all pages that have been modified since midnight today:
 
 ```typescript
-use_mcp_tool roam-research find_pages_modified_today {}
+use_mcp_tool roam-research roam_find_pages_modified_today {}
 ```
 
 Features:

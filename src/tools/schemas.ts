@@ -243,8 +243,8 @@ export const toolSchemas = {
       ]
     }
   },
-  find_pages_modified_today: {
-    name: 'find_pages_modified_today',
+  roam_find_pages_modified_today: {
+    name: 'roam_find_pages_modified_today',
     description: 'Find all pages that have been modified today (since midnight).',
     inputSchema: {
       type: 'object',

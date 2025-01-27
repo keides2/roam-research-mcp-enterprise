@@ -44,7 +44,7 @@ export class RoamServer {
               roam_search_by_status: {},
               roam_search_block_refs: {},
               roam_search_hierarchy: {},
-              find_pages_modified_today: {},
+              roam_find_pages_modified_today: {},
               roam_search_by_text: {},
               roam_update_block: {},
               roam_update_blocks: {},
@@ -219,7 +219,7 @@ export class RoamServer {
             };
           }
 
-          case 'find_pages_modified_today': {
+          case 'roam_find_pages_modified_today': {
             const result = await this.toolHandlers.findPagesModifiedToday();
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
