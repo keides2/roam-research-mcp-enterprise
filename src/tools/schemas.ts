@@ -20,13 +20,13 @@ export const toolSchemas = {
   },
   roam_fetch_page_by_title: {
     name: 'roam_fetch_page_by_title',
-    description: 'Retrieve complete page contents by exact title, including all nested blocks and resolved block references. Use for reading and analyzing existing Roam pages.',
+    description: 'Retrieve complete page contents by exact title, including all nested blocks and resolved block references. Use for accessing daily pages, reading and analyzing existing Roam pages.',
     inputSchema: {
       type: 'object',
       properties: {
         title: {
           type: 'string',
-          description: 'Title of the page to fetch and read',
+          description: 'Title of the page. For date pages, use ordinal date formats such as January 2nd, 2025',
         },
       },
       required: ['title'],
@@ -371,7 +371,7 @@ export const toolSchemas = {
   },
   roam_search_by_date: {
     name: 'roam_search_by_date',
-    description: 'Search for blocks or pages based on creation or modification dates',
+    description: 'Search for blocks or pages based on creation or modification dates. Not for daily pages with ordinal date titles.',
     inputSchema: {
       type: 'object',
       properties: {
