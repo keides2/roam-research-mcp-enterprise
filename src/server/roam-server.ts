@@ -27,7 +27,7 @@ export class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.17.0',
+        version: '0.24.2',
       },
       {
           capabilities: {
@@ -281,7 +281,11 @@ export class RoamServer {
           }
 
           case 'roam_recall': {
-            const result = await this.toolHandlers.recall();
+            const { sort_by = 'newest', filter_tag } = request.params.arguments as {
+              sort_by?: 'newest' | 'oldest';
+              filter_tag?: string;
+            };
+            const result = await this.toolHandlers.recall(sort_by, filter_tag);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };

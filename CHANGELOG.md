@@ -1,3 +1,7 @@
+v.0.24.2
+
+- Added sort_by and filter_tag to roam_recall
+
 v.0.24.1
 
 - Fixed searchByStatus for TODO checks

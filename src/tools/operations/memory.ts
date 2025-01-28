@@ -87,7 +87,7 @@ export class MemoryOperations {
     return { success: true };
   }
 
-  async recall(): Promise<{ success: boolean; memories: string[] }> {
+  async recall(sort_by: 'newest' | 'oldest' = 'newest', filter_tag?: string): Promise<{ success: boolean; memories: string[] }> {
     // Get memories tag from environment
     var memoriesTag = process.env.MEMORIES_TAG;
     if (!memoriesTag) {
@@ -99,34 +99,94 @@ export class MemoryOperations {
       .replace(/^#/, '')  // Remove leading #
       .replace(/^\[\[/, '').replace(/\]\]$/, '');  // Remove [[ and ]]
 
-    // Get results from tag search
-    const tagResults = await this.searchOps.searchForTag(tagText);
-    
-    // Get blocks from the memories page
-    const pageQuery = `[:find ?string
-                       :in $ ?title
-                       :where [?p :node/title ?title]
-                              [?b :block/page ?p]
-                              [?b :block/string ?string]]`;
-    const pageResults = await q(this.graph, pageQuery, [tagText]) as [string][];
-    
-    // Combine both sets of results and remove the memories tag
-    const allMemories = [
-      ...tagResults.matches.map((match: SearchResult) => match.content),
-      ...pageResults.map(([content]) => content)
-    ].map(content => content.replace(`${memoriesTag} `, ''));
-    
-    // Resolve any block references in the combined memories
-    const resolvedMemories = await Promise.all(
-      allMemories.map(async (content) => resolveRefs(this.graph, content))
-    );
-    
-    // Remove duplicates
-    const uniqueMemories = [...new Set(resolvedMemories)];
-    
-    return {
-      success: true,
-      memories: uniqueMemories
-    };
+    try {
+      // Get page blocks using query to access actual block content
+      const ancestorRule = `[
+        [ (ancestor ?b ?a)
+          [?a :block/children ?b] ]
+        [ (ancestor ?b ?a)
+          [?parent :block/children ?b]
+          (ancestor ?parent ?a) ]
+      ]`;
+
+      // Query to find all blocks on the page
+      const pageQuery = `[:find ?string ?time
+                         :in $ % ?title
+                         :where 
+                         [?page :node/title ?title]
+                         [?block :block/string ?string]
+                         [?block :create/time ?time]
+                         (ancestor ?block ?page)]`;
+      
+      // Execute query
+      const pageResults = await q(this.graph, pageQuery, [ancestorRule, tagText]) as [string, number][];
+
+      // Process page blocks with sorting
+      let pageMemories = pageResults
+        .sort(([_, aTime], [__, bTime]) => 
+          sort_by === 'newest' ? bTime - aTime : aTime - bTime
+        )
+        .map(([content]) => content);
+
+      // Get tagged blocks from across the graph
+      const tagResults = await this.searchOps.searchForTag(tagText);
+      
+      // Process tagged blocks with sorting
+      let taggedMemories = tagResults.matches
+        .sort((a: SearchResult, b: SearchResult) => {
+          const aTime = a.block_uid ? parseInt(a.block_uid.split('-')[0], 16) : 0;
+          const bTime = b.block_uid ? parseInt(b.block_uid.split('-')[0], 16) : 0;
+          return sort_by === 'newest' ? bTime - aTime : aTime - bTime;
+        })
+        .map(match => match.content);
+
+      // Resolve any block references in both sets
+      const resolvedPageMemories = await Promise.all(
+        pageMemories.map(async (content: string) => resolveRefs(this.graph, content))
+      );
+      const resolvedTaggedMemories = await Promise.all(
+        taggedMemories.map(async (content: string) => resolveRefs(this.graph, content))
+      );
+
+      // Combine both sets and remove duplicates while preserving order
+      let uniqueMemories = [
+        ...resolvedPageMemories,
+        ...resolvedTaggedMemories
+      ].filter((memory, index, self) => 
+        self.indexOf(memory) === index
+      );
+
+      // Format filter tag with exact Roam tag syntax
+      const filterTagFormatted = filter_tag ? 
+      (filter_tag.includes(' ') ? `#[[${filter_tag}]]` : `#${filter_tag}`) : null;
+
+      // Filter by exact tag match if provided
+      if (filterTagFormatted) {
+        uniqueMemories = uniqueMemories.filter(memory => memory.includes(filterTagFormatted));
+      }
+      
+      // Format memories tag for removal and clean up memories tag
+      const memoriesTagFormatted = tagText.includes(' ') || tagText.includes('/') ? `#[[${tagText}]]` : `#${tagText}`;
+      uniqueMemories = uniqueMemories.map(memory => memory.replace(memoriesTagFormatted, '').trim());
+
+      // return {
+      //   success: true,
+      //   memories: [
+      //     `memoriesTag = ${memoriesTag}`,
+      //     `filter_tag = ${filter_tag}`,
+      //     `filterTagFormatted = ${filterTagFormatted}`,
+      //     `memoriesTagFormatted = ${memoriesTagFormatted}`,
+      //   ]
+      // }
+      return {
+        success: true,
+        memories: uniqueMemories
+      };
+    } catch (error: any) {
+      throw new McpError(
+        ErrorCode.InternalError,
+        `Failed to recall memories: ${error.message}`
+      );
+    }
   }
 }

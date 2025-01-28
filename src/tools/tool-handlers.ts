@@ -113,8 +113,8 @@ export class ToolHandlers {
     return this.memoryOps.remember(memory, categories);
   }
 
-  async recall() {
-    return this.memoryOps.recall();
+  async recall(sort_by: 'newest' | 'oldest' = 'newest', filter_tag?: string) {
+    return this.memoryOps.recall(sort_by, filter_tag);
   }
 
   // Todo Operations

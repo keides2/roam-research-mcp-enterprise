@@ -426,11 +426,21 @@ export const toolSchemas = {
   },
   roam_recall: {
     name: 'roam_recall',
-    description: 'Retrieve all stored memories by searching for blocks tagged with MEMORIES_TAG and content from the page with the same name. Returns a combined, deduplicated list of memories.',
+    description: 'Retrieve all stored memories by searching for blocks tagged with MEMORIES_TAG and content from the page with the same name. Returns a combined, deduplicated list of memories. Optionally filter by specific tags and sort by creation date.',
     inputSchema: {
       type: 'object',
-      properties: {},
-      required: []
+      properties: {
+        sort_by: {
+          type: 'string',
+          description: 'Sort order for memories based on creation date',
+          enum: ['newest', 'oldest'],
+          default: 'newest'
+        },
+        filter_tag: {
+          type: 'string',
+          description: 'Include only memories with a specific filter tag. For single word tags use format "tag", for multi-word tags use format "tag word" (without brackets)'
+        }
+      }
     }
   },
   roam_datomic_query: {
