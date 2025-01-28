@@ -47,7 +47,7 @@ export class RoamServer {
               roam_find_pages_modified_today: {},
               roam_search_by_text: {},
               roam_update_block: {},
-              roam_update_blocks: {},
+              roam_update_multiple_blocks: {},
               roam_search_by_date: {},
               roam_datomic_query: {}
             },
@@ -220,7 +220,10 @@ export class RoamServer {
           }
 
           case 'roam_find_pages_modified_today': {
-            const result = await this.toolHandlers.findPagesModifiedToday();
+            const { max_num_pages } = request.params.arguments as {
+              max_num_pages?: number;
+            };
+            const result = await this.toolHandlers.findPagesModifiedToday(max_num_pages || 50);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };
@@ -291,7 +294,7 @@ export class RoamServer {
             };
           }
 
-          case 'roam_update_blocks': {
+          case 'roam_update_multiple_blocks': {
             const { updates } = request.params.arguments as {
               updates: Array<{
                 block_uid: string;

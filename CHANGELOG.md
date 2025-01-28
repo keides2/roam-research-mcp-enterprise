@@ -1,3 +1,8 @@
+v.0.24.3
+
+- Clarified roam_update_multiple_blocks
+- Added a variable to roam_find_pages_modified_today
+
 v.0.24.2
 
 - Added sort_by and filter_tag to roam_recall

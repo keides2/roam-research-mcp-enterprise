@@ -249,13 +249,12 @@ export const toolSchemas = {
     inputSchema: {
       type: 'object',
       properties: {
-        num_pages: {
+        max_num_pages: {
           type: 'integer',
-          description: 'Number of result pages to retrieve (default: 10)',
-          default: 10
+          description: 'Max number of pages to retrieve (default: 50)',
+          default: 50
         },        
-      },
-      required: ['num_pages']
+      }
     }
   },
   roam_search_by_text: {
@@ -278,7 +277,7 @@ export const toolSchemas = {
   },
   roam_update_block: {
     name: 'roam_update_block',
-    description: 'Update the content of an existing block identified by its UID. Can either provide new content directly or use a transform pattern to modify existing content.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
+    description: 'Update a single block identified by its UID. Use this for individual block updates when you need to either replace the entire content or apply a transform pattern to modify specific parts of the content.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -318,9 +317,9 @@ export const toolSchemas = {
       ]
     }
   },
-  roam_update_blocks: {
-    name: 'roam_update_blocks',
-    description: 'Update multiple blocks in a single batch operation. Each update can provide either new content directly or a transform pattern.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
+  roam_update_multiple_blocks: {
+    name: 'roam_update_multiple_blocks',
+    description: 'Efficiently update multiple blocks in a single batch operation. Use this when you need to update several blocks at once to avoid making multiple separate API calls. Each block in the batch can independently either have its content replaced or transformed using a pattern.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
     inputSchema: {
       type: 'object',
       properties: {
