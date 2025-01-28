@@ -405,13 +405,13 @@ export const toolSchemas = {
   },
   roam_remember: {
     name: 'roam_remember',
-    description: 'Add a memory or piece of information to remember, stored on the daily page with #[[LLM/Memories]] tag and optional categories. \nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
+    description: 'Add a memory or piece of information to remember, stored on the daily page with MEMORIES_TAG tag and optional categories. \nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
     inputSchema: {
       type: 'object',
       properties: {
         memory: {
           type: 'string',
-          description: 'The memory or information to remember'
+          description: 'The memory detail or information to remember'
         },
         categories: {
           type: 'array',
@@ -426,7 +426,7 @@ export const toolSchemas = {
   },
   roam_recall: {
     name: 'roam_recall',
-    description: 'Retrieve all stored memories by searching for blocks tagged with MEMORIES_TAG and content from the page with the same name. Returns a combined, deduplicated list of memories. Optionally filter by specific tags and sort by creation date.',
+    description: 'Retrieve all stored memories on page titled MEMORIES_TAG, or tagged block content with the same name. Returns a combined, deduplicated list of memories. Optionally filter blcoks with a specified tag and sort by creation date.',
     inputSchema: {
       type: 'object',
       properties: {
