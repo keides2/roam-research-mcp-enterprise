@@ -1,3 +1,9 @@
+v.0.24.5
+
+- Enhanced createOutline to properly handle block_text_uid as either a 9-character UID or string title
+- Added proper detection and use of existing blocks when given a valid block UID
+- Improved error messages to be more specific about block operations
+
 v.0.24.4
 
 - Clarified roam_search_by_date and roam_fetch_page_by_title when it comes to searching for daily pages vs. blocks by date

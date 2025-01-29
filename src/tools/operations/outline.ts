@@ -219,19 +219,42 @@ export class OutlineOperations {
       }
     };
 
+    // Helper function to check if string is a valid Roam UID (9 characters)
+    const isValidUid = (str: string): boolean => {
+      return typeof str === 'string' && str.length === 9;
+    };
+
     // Get or create the parent block
     let targetParentUid: string;
     if (!block_text_uid) {
       targetParentUid = targetPageUid;
     } else {
       try {
-        // Create header block and get its UID
-        targetParentUid = await createAndVerifyBlock(block_text_uid, targetPageUid);
+        if (isValidUid(block_text_uid)) {
+          // First try to find block by UID
+          const uidQuery = `[:find ?uid
+                           :where [?e :block/uid "${block_text_uid}"]
+                                  [?e :block/uid ?uid]]`;
+          const uidResult = await q(this.graph, uidQuery, []) as [string][];
+          
+          if (uidResult && uidResult.length > 0) {
+            // Use existing block if found
+            targetParentUid = uidResult[0][0];
+          } else {
+            throw new McpError(
+              ErrorCode.InvalidRequest,
+              `Block with UID "${block_text_uid}" not found`
+            );
+          }
+        } else {
+          // Create header block and get its UID if not a valid UID
+          targetParentUid = await createAndVerifyBlock(block_text_uid, targetPageUid);
+        }
       } catch (error: any) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         throw new McpError(
           ErrorCode.InternalError,
-          `Failed to create header block "${block_text_uid}": ${errorMessage}`
+          `Failed to ${isValidUid(block_text_uid) ? 'find' : 'create'} block "${block_text_uid}": ${errorMessage}`
         );
       }
     }
