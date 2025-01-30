@@ -29,7 +29,7 @@ export class ToolHandlers {
     return this.pageOps.findPagesModifiedToday(max_num_pages);
   }
 
-  async createPage(title: string, content?: string) {
+  async createPage(title: string, content?: Array<{text: string; level: number}>) {
     return this.pageOps.createPage(title, content);
   }
 

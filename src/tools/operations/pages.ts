@@ -66,7 +66,7 @@ export class PageOperations {
     }
   }
 
-  async createPage(title: string, content?: string): Promise<{ success: boolean; uid: string }> {
+  async createPage(title: string, content?: Array<{text: string; level: number}>): Promise<{ success: boolean; uid: string }> {
     // Ensure title is properly formatted
     const pageTitle = String(title).trim();
     
@@ -104,34 +104,43 @@ export class PageOperations {
       }
     }
     
-    // If content is provided, check if it looks like nested markdown
-    if (content) {
+    // If content is provided, create blocks with explicit levels
+    if (content && content.length > 0) {
       try {
-        const isMultilined = content.includes('\n') || hasMarkdownTable(content);
+        // Create blocks in order, tracking parent UIDs for each level
+        const levelParents: { [level: number]: string } = {};
+        let currentOrder = 0;
         
-        if (isMultilined) {
-          // Use import_nested_markdown functionality
-          const convertedContent = convertToRoamMarkdown(content);
-          const nodes = parseMarkdown(convertedContent);
-          const actions = convertToRoamActions(nodes, pageUid, 'first');
-          const result = await batchActions(this.graph, {
-            action: 'batch-actions',
-            actions
+        for (const block of content) {
+          const parentUid = block.level === 1 ? pageUid : levelParents[block.level - 1];
+          
+          if (block.level > 1 && !parentUid) {
+            throw new Error(`Invalid block hierarchy: level ${block.level} block has no parent`);
+          }
+          
+          const blockResult = await createBlock(this.graph, {
+            action: 'create-block',
+            location: {
+              'parent-uid': parentUid,
+              order: 'last'
+            },
+            block: { string: block.text }
           });
           
-          if (!result) {
-            throw new Error('Failed to import nested markdown content');
+          if (!blockResult) {
+            throw new Error('Failed to create block');
           }
-        } else {
-          // Create a simple block for non-nested content
-          await createBlock(this.graph, {
-            action: 'create-block',
-            location: { 
-              "parent-uid": pageUid,
-              "order": "last"
-            },
-            block: { string: content }
-          });
+          
+          // Store this block's UID for potential child blocks
+          const blockQuery = `[:find ?uid . :in $ ?text :where [?b :block/string ?text] [?b :block/uid ?uid]]`;
+          const blockUid = await q(this.graph, blockQuery, [block.text]);
+          
+          if (!blockUid) {
+            throw new Error('Could not find created block');
+          }
+          
+          levelParents[block.level] = String(blockUid);
+          currentOrder++;
         }
       } catch (error) {
         throw new McpError(

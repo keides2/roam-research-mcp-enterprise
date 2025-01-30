@@ -97,7 +97,10 @@ export class RoamServer {
           case 'roam_create_page': {
             const { title, content } = request.params.arguments as { 
               title: string; 
-              content?: string 
+              content?: Array<{
+                text: string;
+                level: number;
+              }>;
             };
             const result = await this.toolHandlers.createPage(title, content);
             return {

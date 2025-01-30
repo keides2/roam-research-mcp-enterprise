@@ -34,7 +34,7 @@ export const toolSchemas = {
   },
   roam_create_page: {
     name: 'roam_create_page',
-    description: 'Create a new standalone page in Roam with optional content using markdown-style formatting. The nesting structure is inferred from markdown indentation (spaces). Best for:\n- Creating foundational concept pages that other pages will link to/from\n- Establishing new topic areas that need their own namespace\n- Setting up reference materials or documentation\n- Making permanent collections of information.',
+    description: 'Create a new standalone page in Roam with optional content using explicit nesting levels. Best for:\n- Creating foundational concept pages that other pages will link to/from\n- Establishing new topic areas that need their own namespace\n- Setting up reference materials or documentation\n- Making permanent collections of information.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -43,8 +43,24 @@ export const toolSchemas = {
           description: 'Title of the new page',
         },
         content: {
-          type: 'string',
-          description: 'Initial content for the page (optional). Each line becomes a separate block. Indentation (using spaces or tabs) determines the nesting level of each block.',
+          type: 'array',
+          description: 'Initial content for the page as an array of blocks with explicit nesting levels',
+          items: {
+            type: 'object',
+            properties: {
+              text: {
+                type: 'string',
+                description: 'Content of the block'
+              },
+              level: {
+                type: 'integer',
+                description: 'Indentation level (1-10, where 1 is top level)',
+                minimum: 1,
+                maximum: 10
+              }
+            },
+            required: ['text', 'level']
+          }
         },
       },
       required: ['title'],
