@@ -1,3 +1,7 @@
+v.0.24.6
+
+- Updated roam_create_page to use explicit levels
+
 v.0.24.5
 
 - Enhanced createOutline to properly handle block_text_uid as either a 9-character UID or string title
