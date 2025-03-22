@@ -88,7 +88,7 @@ The server provides powerful tools for interacting with Roam Research:
      "mcpServers": {
        "roam-research": {
          "command": "node",
-         "args": ["/path/to/roam-research/build/index.js"],
+         "args": ["/path/to/roam-research-mcp/build/index.js"],
          "env": {
            "ROAM_API_TOKEN": "your-api-token",
            "ROAM_GRAPH_NAME": "your-graph-name",
@@ -101,9 +101,9 @@ The server provides powerful tools for interacting with Roam Research:
 
    Note: The server will first try to load from .env file, then fall back to environment variables from MCP settings.
 
-3. Build the server:
+3. Build the server (make sure you're in the root directory of the MCP):
    ```bash
-   cd roam-research
+   cd roam-research-mcp
    npm install
    npm run build
    ```
