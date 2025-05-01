@@ -26,6 +26,14 @@ npm install
 npm run build
 ```
 
+## To Test
+
+Run [MCP Inspector](https://github.com/modelcontextprotocol/inspector) after build…
+
+```
+npx @modelcontextprotocol/inspector node build/index.js
+```
+
 ## Features
 
 The server provides powerful tools for interacting with Roam Research:
