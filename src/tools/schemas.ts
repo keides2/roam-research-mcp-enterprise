@@ -252,11 +252,8 @@ export const toolSchemas = {
           minimum: 1,
           maximum: 10
         }
-      },
-      oneOf: [
-        { required: ['parent_uid'] },
-        { required: ['child_uid'] }
-      ]
+      }
+      // Note: Validation for either parent_uid or child_uid is handled in the server code
     }
   },
   roam_find_pages_modified_today: {
@@ -326,11 +323,8 @@ export const toolSchemas = {
           required: ['find', 'replace']
         }
       },
-      required: ['block_uid'],
-      oneOf: [
-        { required: ['content'] },
-        { required: ['transform_pattern'] }
-      ]
+      required: ['block_uid']
+      // Note: Validation for either content or transform_pattern is handled in the server code
     }
   },
   roam_update_multiple_blocks: {
@@ -374,11 +368,8 @@ export const toolSchemas = {
                 required: ['find', 'replace']
               }
             },
-            required: ['block_uid'],
-            oneOf: [
-              { required: ['content'] },
-              { required: ['transform'] }
-            ]
+            required: ['block_uid']
+            // Note: Validation for either content or transform is handled in the server code
           }
         }
       },

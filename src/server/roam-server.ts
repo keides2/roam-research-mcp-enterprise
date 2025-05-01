@@ -216,6 +216,15 @@ export class RoamServer {
               page_title_uid?: string;
               max_depth?: number;
             };
+            
+            // Validate that either parent_uid or child_uid is provided, but not both
+            if ((!params.parent_uid && !params.child_uid) || (params.parent_uid && params.child_uid)) {
+              throw new McpError(
+                ErrorCode.InvalidRequest,
+                'Either parent_uid or child_uid must be provided, but not both'
+              );
+            }
+            
             const result = await this.toolHandlers.searchHierarchy(params);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
@@ -268,16 +277,25 @@ export class RoamServer {
               };
             };
 
+            // Validate that either content or transform_pattern is provided, but not both or neither
+            if ((!content && !transform_pattern) || (content && transform_pattern)) {
+              throw new McpError(
+                ErrorCode.InvalidRequest,
+                'Either content or transform_pattern must be provided, but not both or neither'
+              );
+            }
+
             let result;
             if (content) {
               result = await this.toolHandlers.updateBlock(block_uid, content);
-            } else if (transform_pattern) {
+            } else {
+              // We know transform_pattern exists due to validation above
               result = await this.toolHandlers.updateBlock(
                 block_uid,
                 undefined,
                 (currentContent: string) => {
-                  const regex = new RegExp(transform_pattern.find, transform_pattern.global !== false ? 'g' : '');
-                  return currentContent.replace(regex, transform_pattern.replace);
+                  const regex = new RegExp(transform_pattern!.find, transform_pattern!.global !== false ? 'g' : '');
+                  return currentContent.replace(regex, transform_pattern!.replace);
                 }
               );
             }
@@ -309,6 +327,16 @@ export class RoamServer {
                 };
               }>;
             };
+            
+            // Validate that for each update, either content or transform is provided, but not both or neither
+            for (const update of updates) {
+              if ((!update.content && !update.transform) || (update.content && update.transform)) {
+                throw new McpError(
+                  ErrorCode.InvalidRequest,
+                  'For each update, either content or transform must be provided, but not both or neither'
+                );
+              }
+            }
             
             const result = await this.toolHandlers.updateBlocks(updates);
             return {
