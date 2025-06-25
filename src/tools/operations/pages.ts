@@ -104,43 +104,50 @@ export class PageOperations {
       }
     }
     
-    // If content is provided, create blocks with explicit levels
+    // If content is provided, create blocks using batch operations
     if (content && content.length > 0) {
       try {
-        // Create blocks in order, tracking parent UIDs for each level
-        const levelParents: { [level: number]: string } = {};
-        let currentOrder = 0;
+        // Convert content array to MarkdownNode format expected by convertToRoamActions
+        const nodes = content.map(block => ({
+          content: block.text,
+          level: block.level,
+          children: []
+        }));
         
-        for (const block of content) {
-          const parentUid = block.level === 1 ? pageUid : levelParents[block.level - 1];
-          
-          if (block.level > 1 && !parentUid) {
-            throw new Error(`Invalid block hierarchy: level ${block.level} block has no parent`);
+        // Create hierarchical structure based on levels
+        const rootNodes: any[] = [];
+        const levelMap: {[level: number]: any} = {};
+        
+        for (const node of nodes) {
+          if (node.level === 1) {
+            rootNodes.push(node);
+            levelMap[1] = node;
+          } else {
+            const parentLevel = node.level - 1;
+            const parent = levelMap[parentLevel];
+            
+            if (!parent) {
+              throw new Error(`Invalid block hierarchy: level ${node.level} block has no parent`);
+            }
+            
+            parent.children.push(node);
+            levelMap[node.level] = node;
           }
-          
-          const blockResult = await createBlock(this.graph, {
-            action: 'create-block',
-            location: {
-              'parent-uid': parentUid,
-              order: 'last'
-            },
-            block: { string: block.text }
+        }
+        
+        // Generate batch actions for all blocks
+        const actions = convertToRoamActions(rootNodes, pageUid, 'last');
+        
+        // Execute batch operation
+        if (actions.length > 0) {
+          const batchResult = await batchActions(this.graph, {
+            action: 'batch-actions',
+            actions
           });
           
-          if (!blockResult) {
-            throw new Error('Failed to create block');
+          if (!batchResult) {
+            throw new Error('Failed to create blocks');
           }
-          
-          // Store this block's UID for potential child blocks
-          const blockQuery = `[:find ?uid . :in $ ?text :where [?b :block/string ?text] [?b :block/uid ?uid]]`;
-          const blockUid = await q(this.graph, blockQuery, [block.text]);
-          
-          if (!blockUid) {
-            throw new Error('Could not find created block');
-          }
-          
-          levelParents[block.level] = String(blockUid);
-          currentOrder++;
         }
       } catch (error) {
         throw new McpError(

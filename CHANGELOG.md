@@ -1,3 +1,7 @@
+v.0.25.0
+
+- Updated roam_create_page to use batchActions
+
 v.0.24.6
 
 - Updated roam_create_page to use explicit levels
