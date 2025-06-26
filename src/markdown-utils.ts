@@ -232,41 +232,24 @@ function parseMarkdown(markdown: string): MarkdownNode[] {
     const indentation = line.match(/^\s*/)?.[0].length ?? 0;
     let level = Math.floor(indentation / 2);
 
-    // First check for headings
-    const { heading_level, content: headingContent } = parseMarkdownHeadingLevel(trimmedLine);
-    
-    // Then handle bullet points if not a heading
-    let content: string;
-    if (heading_level > 0) {
-      content = headingContent;  // Use clean heading content without # marks
-      level = 0;  // Headings start at root level
-      stack.length = 1;  // Reset stack but keep heading as parent
-      // Create heading node
-      const node: MarkdownNode = {
-        content,
-        level,
-        heading_level,  // Store heading level in node
-        children: []
-      };
-      rootNodes.push(node);
-      stack[0] = node;
-      continue;  // Skip to next line
-    }
-
-    // Handle non-heading content
+    let contentToParse: string;
     const bulletMatch = trimmedLine.match(/^(\s*)[-*+]\s+/);
     if (bulletMatch) {
-      // For bullet points, use the bullet's indentation for level
-      content = trimmedLine.substring(bulletMatch[0].length);
+      // If it's a bullet point, adjust level based on bullet indentation
       level = Math.floor(bulletMatch[1].length / 2);
+      contentToParse = trimmedLine.substring(bulletMatch[0].length); // Content after bullet
     } else {
-      content = trimmedLine;
+      contentToParse = trimmedLine; // No bullet, use trimmed line
     }
     
-    // Create regular node
+    // Now, from the content after bullet/initial indentation, check for heading
+    const { heading_level, content: finalContent } = parseMarkdownHeadingLevel(contentToParse);
+    
+    // Create node
     const node: MarkdownNode = {
-      content,
-      level,
+      content: finalContent, // Use content after heading parsing
+      level, // Use level derived from bullet/indentation
+      ...(heading_level > 0 && { heading_level }),
       children: []
     };
 

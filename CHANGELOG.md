@@ -1,3 +1,11 @@
+v.0.25.5
+
+- ENHANCED: `roam_create_outline` tool for better heading and nesting support
+- Reverted previous change in `src/tools/operations/outline.ts` to preserve original indentation for outline items.
+- Refined `parseMarkdown` in `src/markdown-utils.ts` to correctly parse markdown heading syntax (`#`, `##`, `###`) while maintaining the block's hierarchical level based on indentation.
+- Updated `block_text_uid` description in `roam_create_outline` schema (`src/tools/schemas.ts`) to clarify its use for specifying a parent block by text or UID.
+- Clarified that `roam_create_block` creates blocks directly on a page and does not support nesting under existing blocks. `roam_create_outline` should be used for this purpose.
+
 v.0.25.4
 
 - ADDED: `format` parameter to `roam_fetch_page_by_title` tool

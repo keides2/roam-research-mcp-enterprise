@@ -117,7 +117,7 @@ export const toolSchemas = {
         },
         block_text_uid: {
           type: 'string',
-          description: 'A relevant title heading for the outline (or UID, if known) of the block under which outline content will be nested. If blank, content will be nested under the page title.'
+          description: 'A relevant title heading for the outline (or UID, if known) of the block under which outline content will be nested. If blank, content will be nested directly under the page. This can be either the text content of the block or its UID.'
         },
         outline: {
           type: 'array',

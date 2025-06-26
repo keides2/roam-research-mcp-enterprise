@@ -27,7 +27,7 @@ export class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.25.4',
+        version: '0.25.5',
       },
       {
           capabilities: {

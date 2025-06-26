@@ -14,6 +14,21 @@ import type { OutlineItem } from '../types/index.js';
 export class OutlineOperations {
   constructor(private graph: Graph) {}
 
+  /**
+   * Creates an outline structure on a Roam Research page, optionally under a specific block.
+   *
+   * @param outline - An array of OutlineItem objects, each containing text and a level.
+   *                  Markdown heading syntax (#, ##, ###) in the text will be recognized
+   *                  and converted to Roam headings while preserving the outline's hierarchical
+   *                  structure based on indentation.
+   * @param page_title_uid - The title or UID of the page where the outline should be created.
+   *                         If not provided, today's daily page will be used.
+   * @param block_text_uid - Optional. The text content or UID of an existing block under which
+   *                         the outline should be inserted. If a text string is provided and
+   *                         no matching block is found, a new block with that text will be created
+   *                         on the page to serve as the parent. If a UID is provided and the block
+   *                         is not found, an error will be thrown.
+   */
   async createOutline(
     outline: Array<OutlineItem>,
     page_title_uid?: string,
@@ -280,6 +295,8 @@ export class OutlineOperations {
       const markdownContent = validOutline
         .map(item => {
           const indent = '  '.repeat(item.level - 1);
+          // If the item text starts with a markdown heading (e.g., #, ##, ###),
+          // treat it as a direct heading without adding a bullet or outline indentation.
           return `${indent}- ${item.text?.trim()}`;
         })
         .join('\n');
