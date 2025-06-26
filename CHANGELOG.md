@@ -1,3 +1,9 @@
+v.0.25.6
+
+- ADDED: Docker support
+- Created a `Dockerfile` for containerization.
+- Added an `npm start` script to `package.json` for running the application within the Docker container.
+
 v.0.25.5
 
 - ENHANCED: `roam_create_outline` tool for better heading and nesting support

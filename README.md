@@ -26,6 +26,26 @@ npm install
 npm run build
 ```
 
+## Docker
+
+This project can be easily containerized using Docker. A `Dockerfile` is provided at the root of the repository.
+
+### Build the Docker Image
+
+To build the Docker image, navigate to the project root and run:
+
+```bash
+docker build -t roam-research-mcp .
+```
+
+### Run the Docker Container
+
+To run the Docker container and map port 3000 (if your application uses it), use:
+
+```bash
+docker run -p 3000:3000 roam-research-mcp
+```
+
 ## To Test
 
 Run [MCP Inspector](https://github.com/modelcontextprotocol/inspector) after build…
