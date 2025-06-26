@@ -109,12 +109,13 @@ export class RoamServer {
           }
 
           case 'roam_create_block': {
-            const { content, page_uid, title } = request.params.arguments as {
+            const { content, page_uid, title, heading } = request.params.arguments as {
               content: string;
               page_uid?: string;
               title?: string;
+              heading?: number;
             };
-            const result = await this.toolHandlers.createBlock(content, page_uid, title);
+            const result = await this.toolHandlers.createBlock(content, page_uid, title, heading);
             return {
               content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
             };

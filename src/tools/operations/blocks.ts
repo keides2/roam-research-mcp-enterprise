@@ -84,9 +84,39 @@ export class BlockOperations {
     try {
       // If the content has multiple lines or is a table, use nested import
       if (content.includes('\n')) {
-        // Parse and import the nested content
-        const convertedContent = convertToRoamMarkdown(content);
-        const nodes = parseMarkdown(convertedContent);
+        let nodes;
+        
+        // If heading parameter is provided, manually construct nodes to preserve heading
+        if (heading) {
+          const lines = content.split('\n');
+          const firstLine = lines[0].trim();
+          const remainingLines = lines.slice(1);
+          
+          // Create the first node with heading formatting
+          const firstNode = {
+            content: firstLine,
+            level: 0,
+            heading_level: heading,
+            children: []
+          };
+          
+          // If there are remaining lines, parse them as children or siblings
+          if (remainingLines.length > 0 && remainingLines.some(line => line.trim())) {
+            const remainingContent = remainingLines.join('\n');
+            const convertedRemainingContent = convertToRoamMarkdown(remainingContent);
+            const remainingNodes = parseMarkdown(convertedRemainingContent);
+            
+            // Add remaining nodes as siblings to the first node
+            nodes = [firstNode, ...remainingNodes];
+          } else {
+            nodes = [firstNode];
+          }
+        } else {
+          // No heading parameter, use original parsing logic
+          const convertedContent = convertToRoamMarkdown(content);
+          nodes = parseMarkdown(convertedContent);
+        }
+        
         const actions = convertToRoamActions(nodes, targetPageUid, 'last');
         
         // Execute batch actions to create the nested structure
@@ -103,29 +133,22 @@ export class BlockOperations {
         return { 
           success: true,
           block_uid: blockUid,
-          parent_uid: targetPageUid
+          parent_uid: targetPageUid!
         };
       } else {
-        // For single block content, create batch action directly to avoid reversal issues
-        // Generate a random UID for the block
-        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
-        let newBlockUid = '';
-        for (let i = 0; i < 9; i++) {
-          newBlockUid += chars.charAt(Math.floor(Math.random() * chars.length));
+        // For single block content, use the same convertToRoamActions approach that works in roam_create_page
+        const nodes = [{
+          content: content,
+          level: 0,
+          ...(heading && typeof heading === 'number' && heading > 0 && { heading_level: heading }),
+          children: []
+        }];
+        
+        if (!targetPageUid) {
+          throw new McpError(ErrorCode.InternalError, 'targetPageUid is undefined');
         }
         
-        const actions = [{
-          action: 'create-block' as const,
-          location: {
-            'parent-uid': targetPageUid,
-            order: 'last' as const
-          },
-          block: {
-            uid: newBlockUid,
-            string: content,
-            ...(heading && { heading: heading })
-          }
-        }];
+        const actions = convertToRoamActions(nodes, targetPageUid, 'last');
         
         // Execute batch actions to create the block
         const result = await batchActions(this.graph, {
@@ -137,11 +160,11 @@ export class BlockOperations {
           throw new Error('Failed to create block');
         }
 
-        const createdBlockUid = result.created_uids?.[0] || newBlockUid;
+        const blockUid = result.created_uids?.[0];
         return { 
           success: true,
-          block_uid: createdBlockUid,
-          parent_uid: targetPageUid
+          block_uid: blockUid,
+          parent_uid: targetPageUid!
         };
       }
     } catch (error) {

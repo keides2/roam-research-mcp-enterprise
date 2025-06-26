@@ -1,3 +1,12 @@
+v.0.25.2
+
+- FIXED: roam_create_block heading formatting issue
+- Root cause: Missing heading parameter extraction in server request handler
+- Solution: Added heading parameter to roam_create_block handler in roam-server.ts
+- Also removed problematic default: 0 from heading schema definition
+- Heading formatting now works correctly for both single and multi-line blocks
+- roam_create_block now properly applies H1, H2, and H3 formatting when heading parameter is provided
+
 v.0.25.1
 
 - Investigated heading formatting issue in roam_create_block tool

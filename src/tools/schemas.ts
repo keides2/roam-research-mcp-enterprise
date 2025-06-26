@@ -60,7 +60,7 @@ export const toolSchemas = {
               },
               heading: {
                 type: 'integer',
-                description: 'Heading formatting for this block (1-3)',
+                description: 'Optional: Heading formatting for this block (1-3)',
                 minimum: 1,
                 maximum: 3
               }
@@ -74,7 +74,7 @@ export const toolSchemas = {
   },
   roam_create_block: {
     name: 'roam_create_block',
-    description: 'Add a new block to an existing Roam page. If no page specified, adds to today\'s daily note. Best for capturing immediate thoughts, additions to discussions, or content that doesn\'t warrant its own page. Can specify page by title or UID.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
+    description: 'Add new block to an existing Roam page. If no page specified, adds to today\'s daily note. Best for capturing immediate thoughts, additions to discussions, or content that doesn\'t warrant its own page. Can specify page by title or UID.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -92,7 +92,7 @@ export const toolSchemas = {
         },
         heading: {
           type: 'integer',
-          description: 'Heading formatting for this block (1-3)',
+          description: 'Optional: Heading formatting for this block (1-3)',
           minimum: 1,
           maximum: 3
         }
