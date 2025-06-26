@@ -40,18 +40,28 @@ docker build -t roam-research-mcp .
 
 ### Run the Docker Container
 
-To run the Docker container and map port 3000 (if your application uses it), use:
+To run the Docker container and map port 3000 (if your application uses it), you must also provide the necessary environment variables. Use the `-e` flag to pass `ROAM_API_TOKEN`, `ROAM_GRAPH_NAME`, and optionally `MEMORIES_TAG`:
 
 ```bash
-docker run -p 3000:3000 roam-research-mcp
+docker run -p 3000:3000 \
+  -e ROAM_API_TOKEN="your-api-token" \
+  -e ROAM_GRAPH_NAME="your-graph-name" \
+  -e MEMORIES_TAG="#[[LLM/Memories]]" \
+  roam-research-mcp
+```
+
+Alternatively, if you have a `.env` file in the project root (which is copied into the Docker image during build), you can use the `--env-file` flag:
+
+```bash
+docker run -p 3000:3000 --env-file .env roam-research-mcp
 ```
 
 ## To Test
 
-Run [MCP Inspector](https://github.com/modelcontextprotocol/inspector) after build…
+Run [MCP Inspector](https://github.com/modelcontextprotocol/inspector) after build using the provided npm script:
 
-```
-npx @modelcontextprotocol/inspector node build/index.js
+```bash
+npm run inspector
 ```
 
 ## Features
