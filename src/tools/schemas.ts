@@ -34,7 +34,7 @@ export const toolSchemas = {
   },
   roam_create_page: {
     name: 'roam_create_page',
-    description: 'Create a new standalone page in Roam with optional content using explicit nesting levels. Best for:\n- Creating foundational concept pages that other pages will link to/from\n- Establishing new topic areas that need their own namespace\n- Setting up reference materials or documentation\n- Making permanent collections of information.',
+    description: 'Create new standalone page in Roam with optional content using explicit nesting levels and headings (H1-H3). Best for:\n- Creating foundational concept pages that other pages will link to/from\n- Establishing new topic areas that need their own namespace\n- Setting up reference materials or documentation\n- Making permanent collections of information.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -57,6 +57,12 @@ export const toolSchemas = {
                 description: 'Indentation level (1-10, where 1 is top level)',
                 minimum: 1,
                 maximum: 10
+              },
+              heading: {
+                type: 'integer',
+                description: 'Heading formatting for this block (1-3)',
+                minimum: 1,
+                maximum: 3
               }
             },
             required: ['text', 'level']
@@ -84,6 +90,12 @@ export const toolSchemas = {
           type: 'string',
           description: 'Optional: Title of the page to add block to (defaults to today\'s date if neither page_uid nor title provided)',
         },
+        heading: {
+          type: 'integer',
+          description: 'Heading formatting for this block (1-3)',
+          minimum: 1,
+          maximum: 3
+        }
       },
       required: ['content'],
     },

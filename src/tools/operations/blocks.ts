@@ -13,7 +13,7 @@ import type { BlockUpdate, BlockUpdateResult } from '../types/index.js';
 export class BlockOperations {
   constructor(private graph: Graph) {}
 
-  async createBlock(content: string, page_uid?: string, title?: string): Promise<{ success: boolean; block_uid?: string; parent_uid: string }> {
+  async createBlock(content: string, page_uid?: string, title?: string, heading?: number): Promise<{ success: boolean; block_uid?: string; parent_uid: string }> {
     // If page_uid provided, use it directly
     let targetPageUid = page_uid;
     
@@ -106,33 +106,41 @@ export class BlockOperations {
           parent_uid: targetPageUid
         };
       } else {
-        // For non-table content, create a simple block
-        await createRoamBlock(this.graph, {
-          action: 'create-block',
-          location: { 
-            "parent-uid": targetPageUid,
-            "order": "last"
+        // For single block content, create batch action directly to avoid reversal issues
+        // Generate a random UID for the block
+        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_';
+        let newBlockUid = '';
+        for (let i = 0; i < 9; i++) {
+          newBlockUid += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        
+        const actions = [{
+          action: 'create-block' as const,
+          location: {
+            'parent-uid': targetPageUid,
+            order: 'last' as const
           },
-          block: { string: content }
+          block: {
+            uid: newBlockUid,
+            string: content,
+            ...(heading && { heading: heading })
+          }
+        }];
+        
+        // Execute batch actions to create the block
+        const result = await batchActions(this.graph, {
+          action: 'batch-actions',
+          actions
         });
 
-        // Get the block's UID
-        const findBlockQuery = `[:find ?uid
-                               :in $ ?parent ?string
-                               :where [?b :block/uid ?uid]
-                                     [?b :block/string ?string]
-                                     [?b :block/parents ?p]
-                                     [?p :block/uid ?parent]]`;
-        const blockResults = await q(this.graph, findBlockQuery, [targetPageUid, content]) as [string][];
-        
-        if (!blockResults || blockResults.length === 0) {
-          throw new Error('Could not find created block');
+        if (!result) {
+          throw new Error('Failed to create block');
         }
 
-        const blockUid = blockResults[0][0];
+        const createdBlockUid = result.created_uids?.[0] || newBlockUid;
         return { 
           success: true,
-          block_uid: blockUid,
+          block_uid: createdBlockUid,
           parent_uid: targetPageUid
         };
       }

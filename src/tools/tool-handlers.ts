@@ -29,7 +29,7 @@ export class ToolHandlers {
     return this.pageOps.findPagesModifiedToday(max_num_pages);
   }
 
-  async createPage(title: string, content?: Array<{text: string; level: number}>) {
+  async createPage(title: string, content?: Array<{text: string; level: number; heading?: number}>) {
     return this.pageOps.createPage(title, content);
   }
 
@@ -38,8 +38,8 @@ export class ToolHandlers {
   }
 
   // Block Operations
-  async createBlock(content: string, page_uid?: string, title?: string) {
-    return this.blockOps.createBlock(content, page_uid, title);
+  async createBlock(content: string, page_uid?: string, title?: string, heading?: number) {
+    return this.blockOps.createBlock(content, page_uid, title, heading);
   }
 
   async updateBlock(block_uid: string, content?: string, transform?: (currentContent: string) => string) {

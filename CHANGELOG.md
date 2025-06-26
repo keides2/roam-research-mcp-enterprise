@@ -1,3 +1,12 @@
+v.0.25.1
+
+- Investigated heading formatting issue in roam_create_block tool
+- Attempted multiple fixes: direct createBlock API → batchActions → convertToRoamActions → direct batch action creation
+- Confirmed roam_create_page works correctly for heading formatting
+- Identified that heading formatting fails specifically for single block creation via roam_create_block
+- Issue remains unresolved despite extensive troubleshooting and multiple implementation approaches
+- Current status: roam_create_block does not apply heading formatting, investigation ongoing
+
 v.0.25.0
 
 - Updated roam_create_page to use batchActions

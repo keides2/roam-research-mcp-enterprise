@@ -66,7 +66,7 @@ export class PageOperations {
     }
   }
 
-  async createPage(title: string, content?: Array<{text: string; level: number}>): Promise<{ success: boolean; uid: string }> {
+  async createPage(title: string, content?: Array<{text: string; level: number; heading?: number}>): Promise<{ success: boolean; uid: string }> {
     // Ensure title is properly formatted
     const pageTitle = String(title).trim();
     
@@ -111,6 +111,7 @@ export class PageOperations {
         const nodes = content.map(block => ({
           content: block.text,
           level: block.level,
+          ...(block.heading && { heading_level: block.heading }),
           children: []
         }));
         
