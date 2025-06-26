@@ -1,3 +1,10 @@
+v.0.25.3
+
+- FIXED: roam_create_block multiline content ordering issue
+- Root cause: Simple newline-separated content was being created in reverse order
+- Solution: Added logic to detect simple newline-separated content and reverse the nodes array to maintain original order
+- Fix is specific to simple multiline content without markdown formatting, preserving existing behavior for complex markdown
+
 v.0.25.2
 
 - FIXED: roam_create_block heading formatting issue
