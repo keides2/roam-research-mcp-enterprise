@@ -218,6 +218,23 @@ export class PageOperations {
       return `${title} (no content found)`;
     }
 
+    // Get heading information for blocks that have it
+    const headingsQuery = `[:find ?block-uid ?heading
+                          :in $ % ?page-title
+                          :where [?page :node/title ?page-title]
+                                 [?block :block/uid ?block-uid]
+                                 [?block :block/heading ?heading]
+                                 (ancestor ?block ?page)]`;
+    const headings = await q(this.graph, headingsQuery, [ancestorRule, title]);
+    
+    // Create a map of block UIDs to heading levels
+    const headingMap = new Map<string, number>();
+    if (headings) {
+      for (const [blockUid, heading] of headings) {
+        headingMap.set(blockUid, heading as number);
+      }
+    }
+
     // Create a map of all blocks
     const blockMap = new Map<string, RoamBlock>();
     const rootBlocks: RoamBlock[] = [];
@@ -229,6 +246,7 @@ export class PageOperations {
         uid: blockUid,
         string: resolvedString,
         order: order as number,
+        heading: headingMap.get(blockUid) || null,
         children: []
       };
       blockMap.set(blockUid, block);
@@ -265,7 +283,18 @@ export class PageOperations {
     const toMarkdown = (blocks: RoamBlock[], level: number = 0): string => {
       return blocks.map(block => {
         const indent = '  '.repeat(level);
-        let md = `${indent}- ${block.string}`;
+        let md: string;
+        
+        // Check block heading level and format accordingly
+        if (block.heading && block.heading > 0) {
+          // Format as heading with appropriate number of hashtags
+          const hashtags = '#'.repeat(block.heading);
+          md = `${indent}${hashtags} ${block.string}`;
+        } else {
+          // No heading, use bullet point (current behavior)
+          md = `${indent}- ${block.string}`;
+        }
+        
         if (block.children.length > 0) {
           md += '\n' + toMarkdown(block.children, level + 1);
         }
