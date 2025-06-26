@@ -68,22 +68,22 @@ The server provides powerful tools for interacting with Roam Research:
 - Efficient batch operations
 - Hierarchical outline creation
 
-1. `roam_fetch_page_by_title`: Fetch and read a page's content by title, recursively resolving block references up to 4 levels deep
-2. `roam_create_page`: Create new pages with optional content
-3. `roam_create_block`: Create new blocks in a page (defaults to today's daily page)
-4. `roam_import_markdown`: Import nested markdown content under specific blocks
-5. `roam_add_todo`: Add multiple todo items to today's daily page with checkbox syntax
-6. `roam_create_outline`: Create hierarchical outlines with proper nesting and structure
-7. `roam_search_block_refs`: Search for block references within pages or across the graph
-8. `roam_search_hierarchy`: Navigate and search through block parent-child relationships
-9. `roam_find_pages_modified_today`: Find all pages that have been modified since midnight today
-10. `roam_search_by_text`: Search for blocks containing specific text across all pages or within a specific page
-11. `roam_update_block`: Update block content with direct text or pattern-based transformations
-12. `roam_search_by_date`: Search for blocks and pages based on creation or modification dates
-13. `roam_search_for_tag`: Search for blocks containing specific tags with optional filtering by nearby tags
-14. `roam_remember`: Store and categorize memories or information with automatic tagging
-15. `roam_recall`: Recall memories of blocks marked with tag MEMORIES_TAG (see below) or blocks on page title of the same name
-16. `roam_datomic_query`: Execute custom Datalog queries on the Roam graph for advanced data retrieval and analysis
+1. `roam_fetch_page_by_title`: Fetch page content by title.
+2. `roam_create_page`: Create new pages with optional content and headings.
+3. `roam_create_block`: Add new blocks to an existing page or today's daily note.
+4. `roam_import_markdown`: Import nested markdown content under a specific block.
+5. `roam_add_todo`: Add a list of todo items to today's daily page.
+6. `roam_create_outline`: Add a structured outline to an existing page or block.
+7. `roam_search_block_refs`: Search for block references within a page or across the entire graph.
+8. `roam_search_hierarchy`: Search for parent or child blocks in the block hierarchy.
+9. `roam_find_pages_modified_today`: Find pages that have been modified today (since midnight).
+10. `roam_search_by_text`: Search for blocks containing specific text.
+11. `roam_update_block`: Update a single block identified by its UID.
+12. `roam_search_by_date`: Search for blocks or pages based on creation or modification dates.
+13. `roam_search_for_tag`: Search for blocks containing a specific tag and optionally filter by blocks that also contain another tag nearby.
+14. `roam_remember`: Add a memory or piece of information to remember.
+15. `roam_recall`: Retrieve all stored memories.
+16. `roam_datomic_query`: Execute a custom Datomic query on the Roam graph beyond the available search tools.
 
 ## Setup
 
