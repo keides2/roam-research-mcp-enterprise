@@ -19,18 +19,23 @@ export const toolSchemas = {
     },
   },
   roam_fetch_page_by_title: {
-    name: 'roam_fetch_page_by_title',
-    description: 'Retrieve complete page contents by exact title, including all nested blocks and resolved block references. Use for accessing daily pages, reading and analyzing existing Roam pages.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        title: {
-          type: 'string',
-          description: 'Title of the page. For date pages, use ordinal date formats such as January 2nd, 2025',
-        },
+    description: 'Fetch page by title, defaults to raw JSON string.',
+    type: 'object',
+    properties: {
+      title: {
+        type: 'string',
+        description:
+          'Title of the page. For date pages, use ordinal date formats such as January 2nd, 2025'
       },
-      required: ['title'],
+      format: {
+        type: 'string',
+        enum: ['markdown', 'raw'],
+        default: 'raw',
+        description:
+          "Format output as markdown or JSON. 'markdown' returns as string; 'raw' returns JSON string of the page's blocks"
+      }
     },
+    required: ['title']
   },
   roam_create_page: {
     name: 'roam_create_page',
@@ -129,6 +134,12 @@ export const toolSchemas = {
                 description: 'Indentation level (1-10, where 1 is top level)',
                 minimum: 1,
                 maximum: 10
+              },
+              heading: {
+                type: 'integer',
+                description: 'Optional: Heading formatting for this block (1-3)',
+                minimum: 1,
+                maximum: 3
               }
             },
             required: ['text', 'level']
@@ -410,7 +421,7 @@ export const toolSchemas = {
         scope: {
           type: 'string',
           enum: ['blocks', 'pages', 'both'],
-          description: 'Whether to search blocks, pages, or both',
+          description: 'Whether to search blocks, pages',
         },
         include_content: {
           type: 'boolean',

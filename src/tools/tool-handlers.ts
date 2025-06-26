@@ -33,8 +33,8 @@ export class ToolHandlers {
     return this.pageOps.createPage(title, content);
   }
 
-  async fetchPageByTitle(title: string) {
-    return this.pageOps.fetchPageByTitle(title);
+  async fetchPageByTitle(title: string, format?: 'markdown' | 'raw') {
+    return this.pageOps.fetchPageByTitle(title, format);
   }
 
   // Block Operations

@@ -51,7 +51,7 @@ export class PageOperations {
       }
 
       // Extract unique page titles
-      const uniquePages = [...new Set(results.map(([title]) => title))];
+      const uniquePages = Array.from(new Set(results.map(([title]) => title)));
 
       return {
         success: true,
@@ -161,12 +161,12 @@ export class PageOperations {
     return { success: true, uid: pageUid };
   }
 
-  async fetchPageByTitle(title: string): Promise<string> {
+  async fetchPageByTitle(
+    title: string,
+    format: 'markdown' | 'raw' = 'raw'
+  ): Promise<string | RoamBlock[]> {
     if (!title) {
-      throw new McpError(
-        ErrorCode.InvalidRequest,
-        'title is required'
-      );
+      throw new McpError(ErrorCode.InvalidRequest, 'title is required');
     }
 
     // Try different case variations
@@ -215,6 +215,9 @@ export class PageOperations {
     const blocks = await q(this.graph, blocksQuery, [ancestorRule, title]);
 
     if (!blocks || blocks.length === 0) {
+      if (format === 'raw') {
+        return [];
+      }
       return `${title} (no content found)`;
     }
 
@@ -252,7 +255,7 @@ export class PageOperations {
       blockMap.set(blockUid, block);
       
       // If no parent or parent is the page itself, it's a root block
-      if (!parentUid || parentUid === uid) {
+      if (!parentUid || parentUid === uid) {        
         rootBlocks.push(block);
       }
     }
@@ -279,27 +282,33 @@ export class PageOperations {
     };
     sortBlocks(rootBlocks);
 
+    if (format === 'raw') {
+      return JSON.stringify(rootBlocks);
+    }
+
     // Convert to markdown with proper nesting
     const toMarkdown = (blocks: RoamBlock[], level: number = 0): string => {
-      return blocks.map(block => {
-        const indent = '  '.repeat(level);
-        let md: string;
-        
-        // Check block heading level and format accordingly
-        if (block.heading && block.heading > 0) {
-          // Format as heading with appropriate number of hashtags
-          const hashtags = '#'.repeat(block.heading);
-          md = `${indent}${hashtags} ${block.string}`;
-        } else {
-          // No heading, use bullet point (current behavior)
-          md = `${indent}- ${block.string}`;
-        }
-        
-        if (block.children.length > 0) {
-          md += '\n' + toMarkdown(block.children, level + 1);
-        }
-        return md;
-      }).join('\n');
+      return blocks
+        .map(block => {
+          const indent = '  '.repeat(level);
+          let md: string;
+
+          // Check block heading level and format accordingly
+          if (block.heading && block.heading > 0) {
+            // Format as heading with appropriate number of hashtags
+            const hashtags = '#'.repeat(block.heading);
+            md = `${indent}${hashtags} ${block.string}`;
+          } else {
+            // No heading, use bullet point (current behavior)
+            md = `${indent}- ${block.string}`;
+          }
+
+          if (block.children.length > 0) {
+            md += '\n' + toMarkdown(block.children, level + 1);
+          }
+          return md;
+        })
+        .join('\n');
     };
 
     return `# ${title}\n\n${toMarkdown(rootBlocks)}`;

@@ -27,7 +27,7 @@ export class RoamServer {
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.25.3',
+        version: '0.25.4',
       },
       {
           capabilities: {
@@ -87,8 +87,11 @@ export class RoamServer {
           }
 
           case 'roam_fetch_page_by_title': {
-            const { title } = request.params.arguments as { title: string };
-            const content = await this.toolHandlers.fetchPageByTitle(title);
+            const { title, format } = request.params.arguments as {
+              title: string;
+              format?: 'markdown' | 'raw';
+            };
+            const content = await this.toolHandlers.fetchPageByTitle(title, format);
             return {
               content: [{ type: 'text', text: content }],
             };

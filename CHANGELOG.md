@@ -1,3 +1,12 @@
+v.0.25.4
+
+- ADDED: `format` parameter to `roam_fetch_page_by_title` tool
+- Allows fetching page content as raw JSON data (blocks with UIDs) or markdown.
+- Updated `fetchPageByTitle` in `src/tools/operations/pages.ts` to return stringified JSON for raw format.
+- Updated `roam_fetch_page_by_title` schema in `src/tools/schemas.ts` to include `format` parameter with 'raw' as default.
+- Updated `fetchPageByTitle` handler in `src/tools/tool-handlers.ts` to pass `format` parameter.
+- Updated `roam_fetch_page_by_title` case in `src/server/roam-server.ts` to extract and pass `format` parameter.
+
 v.0.25.3
 
 - FIXED: roam_create_block multiline content ordering issue
