@@ -154,7 +154,7 @@ export const toolSchemas = {
   },
   roam_import_markdown: {
     name: 'roam_import_markdown',
-    description: 'Import nested markdown content into Roam under a specific block. Can locate the parent block by UID or by exact string match within a specific page.',
+    description: 'Import nested markdown content into Roam under a specific block. Can locate the parent block by UID (preferred) or by exact string match within a specific page.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -176,7 +176,7 @@ export const toolSchemas = {
         },
         parent_string: {
           type: 'string',
-          description: 'Optional: Exact string content of the parent block to add content under (must provide either page_uid or page_title)'
+          description: 'Optional: Exact string content of the parent block to add content under (must provide either page_uid (preferred) or page_title)'
         },
         order: {
           type: 'string',
@@ -316,7 +316,7 @@ export const toolSchemas = {
   },
   roam_update_block: {
     name: 'roam_update_block',
-    description: 'Update a single block identified by its UID. Use this for individual block updates when you need to either replace the entire content or apply a transform pattern to modify specific parts of the content.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
+    description: 'Update a single block identified by its UID. Use this for individual block updates when you need to either replace the entire content or apply a transform pattern to modify specific parts of the content.\nNOTE Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
     inputSchema: {
       type: 'object',
       properties: {
