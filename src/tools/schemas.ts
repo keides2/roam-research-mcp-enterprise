@@ -19,23 +19,26 @@ export const toolSchemas = {
     },
   },
   roam_fetch_page_by_title: {
+    name: 'roam_fetch_page_by_title',
     description: 'Fetch page by title, defaults to raw JSON string.',
-    type: 'object',
-    properties: {
-      title: {
-        type: 'string',
-        description:
-          'Title of the page. For date pages, use ordinal date formats such as January 2nd, 2025'
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          description:
+            'Title of the page. For date pages, use ordinal date formats such as January 2nd, 2025'
+        },
+        format: {
+          type: 'string',
+          enum: ['markdown', 'raw'],
+          default: 'raw',
+          description:
+            "Format output as markdown or JSON. 'markdown' returns as string; 'raw' returns JSON string of the page's blocks"
+        }
       },
-      format: {
-        type: 'string',
-        enum: ['markdown', 'raw'],
-        default: 'raw',
-        description:
-          "Format output as markdown or JSON. 'markdown' returns as string; 'raw' returns JSON string of the page's blocks"
-      }
+      required: ['title']
     },
-    required: ['title']
   },
   roam_create_page: {
     name: 'roam_create_page',

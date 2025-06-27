@@ -1,3 +1,13 @@
+v.0.25.7
+
+- FIXED: `roam_fetch_page_by_title` schema definition
+- Corrected missing `name` property and proper nesting of `inputSchema` in `src/tools/schemas.ts`.
+- ENHANCED: Dynamic tool loading and error reporting
+- Implemented dynamic loading of tool capabilities from `toolSchemas` in `src/server/roam-server.ts` to ensure consistency.
+- Added robust error handling during server initialization (graph, tool handlers) and connection attempts in `src/server/roam-server.ts` to provide more specific feedback on startup issues.
+- CENTRALIZED: Versioning in `src/server/roam-server.ts`
+- Modified `src/server/roam-server.ts` to dynamically read the version from `package.json`, ensuring a single source of truth for the project version.
+
 v.0.25.6
 
 - ADDED: Docker support

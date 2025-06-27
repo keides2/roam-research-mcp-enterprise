@@ -10,6 +10,17 @@ import { initializeGraph, type Graph } from '@roam-research/roam-api-sdk';
 import { API_TOKEN, GRAPH_NAME } from '../config/environment.js';
 import { toolSchemas } from '../tools/schemas.js';
 import { ToolHandlers } from '../tools/tool-handlers.js';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Read package.json to get the version
+const packageJsonPath = join(__dirname, '../../package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+const serverVersion = packageJson.version;
 
 export class RoamServer {
   private server: Server;
@@ -17,39 +28,39 @@ export class RoamServer {
   private graph: Graph;
 
   constructor() {
-    this.graph = initializeGraph({
-      token: API_TOKEN,
-      graph: GRAPH_NAME,
-    });
+    try {
+      this.graph = initializeGraph({
+        token: API_TOKEN,
+        graph: GRAPH_NAME,
+      });
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new McpError(ErrorCode.InternalError, `Failed to initialize Roam graph: ${errorMessage}`);
+    }
 
-    this.toolHandlers = new ToolHandlers(this.graph);
+    try {
+      this.toolHandlers = new ToolHandlers(this.graph);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new McpError(ErrorCode.InternalError, `Failed to initialize tool handlers: ${errorMessage}`);
+    }
     
+    // Ensure toolSchemas is not empty before proceeding
+    if (Object.keys(toolSchemas).length === 0) {
+      throw new McpError(ErrorCode.InternalError, 'No tool schemas defined in src/tools/schemas.ts');
+    }
+
     this.server = new Server(
       {
         name: 'roam-research',
-        version: '0.25.5',
+        version: serverVersion, // Use the version from package.json
       },
       {
           capabilities: {
             tools: {
-              roam_remember: {},
-              roam_recall: {},
-              roam_add_todo: {},
-              roam_fetch_page_by_title: {},
-              roam_create_page: {},
-              roam_create_block: {},
-              roam_import_markdown: {},
-              roam_create_outline: {},
-              roam_search_for_tag: {},
-              roam_search_by_status: {},
-              roam_search_block_refs: {},
-              roam_search_hierarchy: {},
-              roam_find_pages_modified_today: {},
-              roam_search_by_text: {},
-              roam_update_block: {},
-              roam_update_multiple_blocks: {},
-              roam_search_by_date: {},
-              roam_datomic_query: {}
+              ...Object.fromEntries(
+                Object.keys(toolSchemas).map((toolName) => [toolName, {}])
+              ),
             },
           },
       }
@@ -58,7 +69,14 @@ export class RoamServer {
     this.setupRequestHandlers();
     
     // Error handling
-    this.server.onerror = (error) => { /* handle error silently */ };
+    this.server.onerror = (error) => {
+      // Re-throw as McpError to be caught by the MCP client
+      if (error instanceof McpError) {
+        throw error;
+      }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new McpError(ErrorCode.InternalError, `MCP server internal error: ${errorMessage}`);
+    };
     process.on('SIGINT', async () => {
       await this.server.close();
       process.exit(0);
@@ -379,7 +397,12 @@ export class RoamServer {
   }
 
   async run() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
+    try {
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new McpError(ErrorCode.InternalError, `Failed to connect MCP server: ${errorMessage}`);
+    }
   }
 }
