@@ -1,3 +1,11 @@
+v.0.26.0
+
+- ENHANCED: Added HTTP Stream Transport support
+- Implemented dual transport support for Stdio and HTTP Stream, allowing communication via both local processes and network connections.
+- Updated `src/config/environment.ts` to include `HTTP_STREAM_PORT` for configurable HTTP Stream endpoint.
+- Modified `src/server/roam-server.ts` to initialize and connect `StreamableHTTPServerTransport` alongside `StdioServerTransport`.
+- Configured HTTP server to listen on `HTTP_STREAM_PORT` and handle requests via `StreamableHTTPServerTransport`.
+
 v.0.25.7
 
 - FIXED: `roam_fetch_page_by_title` schema definition

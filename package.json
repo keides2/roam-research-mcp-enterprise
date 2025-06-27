@@ -1,6 +1,6 @@
 {
   "name": "roam-research-mcp",
-  "version": "0.25.7",
+  "version": "0.26.0",
   "description": "A Model Context Protocol (MCP) server for Roam Research API integration",
   "private": false,
   "repository": {
@@ -35,7 +35,7 @@
     "start": "node build/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "0.6.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
     "@roam-research/roam-api-sdk": "^0.10.0",
     "dotenv": "^16.4.7"
   },

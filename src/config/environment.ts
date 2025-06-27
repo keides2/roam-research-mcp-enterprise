@@ -48,4 +48,6 @@ if (!API_TOKEN || !GRAPH_NAME) {
   );
 }
 
-export { API_TOKEN, GRAPH_NAME };
+const HTTP_STREAM_PORT = process.env.HTTP_STREAM_PORT || '8088'; // Default to 8080
+
+export { API_TOKEN, GRAPH_NAME, HTTP_STREAM_PORT };

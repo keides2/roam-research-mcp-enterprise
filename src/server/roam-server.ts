@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   CallToolRequestSchema,
   ErrorCode,
@@ -7,11 +8,12 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { initializeGraph, type Graph } from '@roam-research/roam-api-sdk';
-import { API_TOKEN, GRAPH_NAME } from '../config/environment.js';
+import { API_TOKEN, GRAPH_NAME, HTTP_STREAM_PORT } from '../config/environment.js';
 import { toolSchemas } from '../tools/schemas.js';
 import { ToolHandlers } from '../tools/tool-handlers.js';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -398,8 +400,37 @@ export class RoamServer {
 
   async run() {
     try {
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
+      const stdioTransport = new StdioServerTransport();
+      await this.server.connect(stdioTransport);
+
+      const httpStreamTransport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15), // Basic session ID generation
+      });
+
+      const httpServer = createServer(async (req, res) => {
+        try {
+          await httpStreamTransport.handleRequest(req, res);
+        } catch (error) {
+          console.error('HTTP Stream Transport error:', error);
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Internal Server Error' }));
+          }
+        }
+      });
+
+      httpServer.listen(parseInt(HTTP_STREAM_PORT), () => {
+        console.log(`MCP Roam Research server running with Stdio and HTTP Stream on port ${HTTP_STREAM_PORT}`);
+      });
+
+      // It seems the server.connect is not needed for httpStreamTransport
+      // as it handles requests directly via the http.Server instance.
+      // However, if there's an internal mechanism in the SDK that still
+      // requires connecting the transport to the main server instance,
+      // Connect the httpStreamTransport to the main server instance.
+      // This is crucial for the MCP Server to route messages and handle
+      // requests coming from the HTTP Stream.
+      await this.server.connect(httpStreamTransport);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new McpError(ErrorCode.InternalError, `Failed to connect MCP server: ${errorMessage}`);

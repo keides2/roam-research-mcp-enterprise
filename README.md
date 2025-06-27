@@ -5,16 +5,24 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub](https://img.shields.io/github/license/2b3pro/roam-research-mcp)](https://github.com/2b3pro/roam-research-mcp/blob/main/LICENSE)
 
-A Model Context Protocol (MCP) server that provides comprehensive access to Roam Research's API functionality. This server enables AI assistants like Claude to interact with your Roam Research graph through a standardized interface. (A WORK-IN-PROGRESS, personal project not officially endorsed by Roam Research)
+A Model Context Protocol (MCP) server that provides comprehensive access to Roam Research's API functionality. This server enables AI assistants like Claude to interact with your Roam Research graph through a standardized interface. It supports both standard input/output (stdio) and HTTP Stream communication. (A WORK-IN-PROGRESS, personal project not officially endorsed by Roam Research)
 
 <a href="https://glama.ai/mcp/servers/fzfznyaflu"><img width="380" height="200" src="https://glama.ai/mcp/servers/fzfznyaflu/badge" alt="Roam Research MCP server" /></a>
 
-## Installation
+## Installation and Usage
 
-You can install the package globally:
+This MCP server supports two primary communication methods:
+
+1.  **Stdio (Standard Input/Output):** Ideal for local inter-process communication, command-line tools, and direct integration with applications running on the same machine. This is the default communication method when running the server directly.
+2.  **HTTP Stream:** Provides network-based communication, suitable for web-based clients, remote applications, or scenarios requiring real-time updates over HTTP. The HTTP Stream endpoint runs on port `8088` by default.
+
+### Running with Stdio
+
+You can install the package globally and run it:
 
 ```bash
 npm install -g roam-research-mcp
+roam-research-mcp
 ```
 
 Or clone the repository and build from source:
@@ -24,7 +32,21 @@ git clone https://github.com/2b3pro/roam-research-mcp.git
 cd roam-research-mcp
 npm install
 npm run build
+npm start
 ```
+
+### Running with HTTP Stream
+
+To run the server with HTTP Stream support, you can either:
+
+1.  **Use the default port:** Run `npm start` after building (as shown above). The server will automatically listen on port `8088`.
+2.  **Specify a custom port:** Set the `HTTP_STREAM_PORT` environment variable before starting the server.
+
+    ```bash
+    HTTP_STREAM_PORT=9000 npm start
+    ```
+
+    Or, if using a `.env` file, add `HTTP_STREAM_PORT=9000` to it.
 
 ## Docker
 
@@ -115,10 +137,11 @@ The server provides powerful tools for interacting with Roam Research:
    ROAM_API_TOKEN=your-api-token
    ROAM_GRAPH_NAME=your-graph-name
    MEMORIES_TAG='#[[LLM/Memories]]'
+   HTTP_STREAM_PORT=8088 # Or your desired port for HTTP Stream communication
    ```
 
    Option 2: Using MCP settings (Alternative method)
-   Add the configuration to your MCP settings file:
+   Add the configuration to your MCP settings file. Note that you may need to update the `args` to `["/path/to/roam-research-mcp/build/index.js"]` if you are running the server directly.
 
    - For Cline (`~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`):
    - For Claude desktop app (`~/Library/Application Support/Claude/claude_desktop_config.json`):
@@ -132,7 +155,8 @@ The server provides powerful tools for interacting with Roam Research:
          "env": {
            "ROAM_API_TOKEN": "your-api-token",
            "ROAM_GRAPH_NAME": "your-graph-name",
-           "MEMORIES_TAG": "#[[LLM/Memories]]"
+           "MEMORIES_TAG": "#[[LLM/Memories]]",
+           "HTTP_STREAM_PORT": "8088"
          }
        }
      }
