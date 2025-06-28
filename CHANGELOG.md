@@ -1,3 +1,10 @@
+v.0.27.0
+
+- ADDED: SSE (Server-Sent Events) transport support for legacy clients.
+- REFACTORED: `src/server/roam-server.ts` to use separate MCP `Server` instances for each transport (Stdio, HTTP Stream, and SSE) to ensure they can run concurrently without conflicts.
+- ENHANCED: Each transport now runs on its own isolated `Server` instance, improving stability and preventing cross-transport interference.
+- UPDATED: `src/config/environment.ts` to include `SSE_PORT` for configurable SSE endpoint (defaults to `8087`).
+
 v.0.26.0
 
 - ENHANCED: Added HTTP Stream Transport support
