@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as a parent image for building
-FROM node:22.12-alpine AS builder
+FROM node:lts-alpine AS builder
 
 # Set the working directory in the container
 WORKDIR /app
@@ -20,7 +20,7 @@ RUN npm run build
 
 
 # Use a minimal Node.js runtime as the base for the release image
-FROM node:22-alpine AS release
+FROM node:lts-alpine AS release
 
 # Set environment to production
 ENV NODE_ENV=production
