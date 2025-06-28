@@ -13,7 +13,7 @@ import { toolSchemas } from '../tools/schemas.js';
 import { ToolHandlers } from '../tools/tool-handlers.js';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { createServer } from 'node:http';
+import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,7 +25,6 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
 const serverVersion = packageJson.version;
 
 export class RoamServer {
-  private server: Server;
   private toolHandlers: ToolHandlers;
   private graph: Graph;
 
@@ -51,48 +50,17 @@ export class RoamServer {
     if (Object.keys(toolSchemas).length === 0) {
       throw new McpError(ErrorCode.InternalError, 'No tool schemas defined in src/tools/schemas.ts');
     }
-
-    this.server = new Server(
-      {
-        name: 'roam-research',
-        version: serverVersion, // Use the version from package.json
-      },
-      {
-          capabilities: {
-            tools: {
-              ...Object.fromEntries(
-                Object.keys(toolSchemas).map((toolName) => [toolName, {}])
-              ),
-            },
-          },
-      }
-    );
-
-    this.setupRequestHandlers();
-    
-    // Error handling
-    this.server.onerror = (error) => {
-      // Re-throw as McpError to be caught by the MCP client
-      if (error instanceof McpError) {
-        throw error;
-      }
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new McpError(ErrorCode.InternalError, `MCP server internal error: ${errorMessage}`);
-    };
-    process.on('SIGINT', async () => {
-      await this.server.close();
-      process.exit(0);
-    });
   }
 
-  private setupRequestHandlers() {
+  // Refactored to accept a Server instance
+  private setupRequestHandlers(mcpServer: Server) {
     // List available tools
-    this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: Object.values(toolSchemas),
     }));
 
     // Handle tool calls
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         switch (request.params.name) {
           case 'roam_remember': {
@@ -400,18 +368,53 @@ export class RoamServer {
 
   async run() {
     try {
+      const stdioMcpServer = new Server(
+        {
+          name: 'roam-research',
+          version: serverVersion,
+        },
+        {
+          capabilities: {
+            tools: {
+              ...Object.fromEntries(
+                Object.keys(toolSchemas).map((toolName) => [toolName, {}])
+              ),
+            },
+          },
+        }
+      );
+      this.setupRequestHandlers(stdioMcpServer);
+
       const stdioTransport = new StdioServerTransport();
-      await this.server.connect(stdioTransport);
+      await stdioMcpServer.connect(stdioTransport);
+
+      const httpMcpServer = new Server(
+        {
+          name: 'roam-research-http', // A distinct name for the HTTP server
+          version: serverVersion,
+        },
+        {
+          capabilities: {
+            tools: {
+              ...Object.fromEntries(
+                Object.keys(toolSchemas).map((toolName) => [toolName, {}])
+              ),
+            },
+          },
+        }
+      );
+      this.setupRequestHandlers(httpMcpServer);
 
       const httpStreamTransport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15), // Basic session ID generation
+        sessionIdGenerator: () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
       });
+      await httpMcpServer.connect(httpStreamTransport);
 
-      const httpServer = createServer(async (req, res) => {
+      const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
         try {
           await httpStreamTransport.handleRequest(req, res);
         } catch (error) {
-          console.error('HTTP Stream Transport error:', error);
+          console.error('HTTP Server error:', error);
           if (!res.headersSent) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Internal Server Error' }));
@@ -420,17 +423,9 @@ export class RoamServer {
       });
 
       httpServer.listen(parseInt(HTTP_STREAM_PORT), () => {
-        console.log(`MCP Roam Research server running with Stdio and HTTP Stream on port ${HTTP_STREAM_PORT}`);
+        console.log(`MCP Roam Research server running HTTP Stream on port ${HTTP_STREAM_PORT}`);
       });
 
-      // It seems the server.connect is not needed for httpStreamTransport
-      // as it handles requests directly via the http.Server instance.
-      // However, if there's an internal mechanism in the SDK that still
-      // requires connecting the transport to the main server instance,
-      // Connect the httpStreamTransport to the main server instance.
-      // This is crucial for the MCP Server to route messages and handle
-      // requests coming from the HTTP Stream.
-      await this.server.connect(httpStreamTransport);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new McpError(ErrorCode.InternalError, `Failed to connect MCP server: ${errorMessage}`);
