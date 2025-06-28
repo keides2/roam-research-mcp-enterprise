@@ -1,6 +1,7 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import {
   CallToolRequestSchema,
   ErrorCode,
@@ -8,7 +9,7 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 import { initializeGraph, type Graph } from '@roam-research/roam-api-sdk';
-import { API_TOKEN, GRAPH_NAME, HTTP_STREAM_PORT } from '../config/environment.js';
+import { API_TOKEN, GRAPH_NAME, HTTP_STREAM_PORT, SSE_PORT } from '../config/environment.js';
 import { toolSchemas } from '../tools/schemas.js';
 import { ToolHandlers } from '../tools/tool-handlers.js';
 import { readFileSync } from 'node:fs';
@@ -414,7 +415,7 @@ export class RoamServer {
         try {
           await httpStreamTransport.handleRequest(req, res);
         } catch (error) {
-          console.error('HTTP Server error:', error);
+          // console.error('HTTP Stream Server error:', error);
           if (!res.headersSent) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Internal Server Error' }));
@@ -423,7 +424,73 @@ export class RoamServer {
       });
 
       httpServer.listen(parseInt(HTTP_STREAM_PORT), () => {
-        console.log(`MCP Roam Research server running HTTP Stream on port ${HTTP_STREAM_PORT}`);
+        // console.log(`MCP Roam Research server running HTTP Stream on port ${HTTP_STREAM_PORT}`);
+      });
+
+      // SSE Server setup
+      const sseMcpServer = new Server(
+        {
+          name: 'roam-research-sse', // Distinct name for SSE server
+          version: serverVersion,
+        },
+        {
+          capabilities: {
+            tools: {
+              ...Object.fromEntries(
+                Object.keys(toolSchemas).map((toolName) => [toolName, {}])
+              ),
+            },
+          },
+        }
+      );
+      this.setupRequestHandlers(sseMcpServer);
+
+      const sseHttpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+        const parseBody = (request: IncomingMessage): Promise<any> => {
+          return new Promise((resolve, reject) => {
+            let body = '';
+            request.on('data', (chunk: Buffer) => {
+              body += chunk.toString();
+            });
+            request.on('end', () => {
+              try {
+                resolve(body ? JSON.parse(body) : {});
+              } catch (error) {
+                reject(error);
+              }
+            });
+            request.on('error', reject);
+          });
+        };
+
+        try {
+          if (req.url === '/sse') {
+            const sseTransport = new SSEServerTransport('/sse', res);
+            await sseMcpServer.connect(sseTransport);
+            if (req.method === 'GET') {
+              await sseTransport.start();
+            } else if (req.method === 'POST') {
+              const parsedBody = await parseBody(req);
+              await sseTransport.handlePostMessage(req, res, parsedBody);
+            } else {
+              res.writeHead(405, { 'Content-Type': 'text/plain' });
+              res.end('Method Not Allowed');
+            }
+          } else {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Not Found');
+          }
+        } catch (error) {
+          // console.error('SSE HTTP Server error:', error);
+          if (!res.headersSent) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Internal Server Error' }));
+          }
+        }
+      });
+
+      sseHttpServer.listen(parseInt(SSE_PORT), () => {
+        // console.log(`MCP Roam Research server running SSE on port ${SSE_PORT}`);
       });
 
     } catch (error: unknown) {
