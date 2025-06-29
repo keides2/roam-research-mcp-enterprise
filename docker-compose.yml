@@ -1,0 +1,10 @@
+# docker-compose.yml
+services:
+  roam-mcp:
+    image: roam-research-mcp
+    ports:
+      - "3000:3000"
+      - "8087:8087"
+      - "8088:8088"
+    env_file:
+      - .env

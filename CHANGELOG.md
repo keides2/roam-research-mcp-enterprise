@@ -1,3 +1,8 @@
+v.0.28.0
+
+- ADDED: **Configurable HTTP and SSE Ports**: The HTTP and SSE server ports can now be configured via environment variables (`HTTP_STREAM_PORT` and `SSE_PORT`).
+- ADDED: **Automatic Port Conflict Resolution**: The server now automatically checks if the desired ports are in use and finds the next available ports, preventing startup errors due to port conflicts.
+
 v.0.27.0
 
 - ADDED: SSE (Server-Sent Events) transport support for legacy clients.

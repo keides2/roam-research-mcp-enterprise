@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import { fileURLToPath } from 'node:url';
+import { findAvailablePort } from '../utils/net.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -423,8 +424,9 @@ export class RoamServer {
         }
       });
 
-      httpServer.listen(parseInt(HTTP_STREAM_PORT), () => {
-        // console.log(`MCP Roam Research server running HTTP Stream on port ${HTTP_STREAM_PORT}`);
+      const availableHttpPort = await findAvailablePort(parseInt(HTTP_STREAM_PORT));
+      httpServer.listen(availableHttpPort, () => {
+        // console.log(`MCP Roam Research server running HTTP Stream on port ${availableHttpPort}`);
       });
 
       // SSE Server setup
@@ -489,8 +491,9 @@ export class RoamServer {
         }
       });
 
-      sseHttpServer.listen(parseInt(SSE_PORT), () => {
-        // console.log(`MCP Roam Research server running SSE on port ${SSE_PORT}`);
+      const availableSsePort = await findAvailablePort(parseInt(SSE_PORT));
+      sseHttpServer.listen(availableSsePort, () => {
+        // console.log(`MCP Roam Research server running SSE on port ${availableSsePort}`);
       });
 
     } catch (error: unknown) {
