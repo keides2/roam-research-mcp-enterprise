@@ -105,23 +105,27 @@ The server provides powerful tools for interacting with Roam Research:
 
 1. `roam_fetch_page_by_title`: Fetch page content by title.
 2. `roam_create_page`: Create new pages with optional content and headings.
-3. `roam_create_block`: Add new blocks to an existing page or today's daily note.
-4. `roam_import_markdown`: Import nested markdown content under a specific block.
-5. `roam_add_todo`: Add a list of todo items to today's daily page.
-6. `roam_create_outline`: Add a structured outline to an existing page or block.
-7. `roam_search_block_refs`: Search for block references within a page or across the entire graph.
-8. `roam_search_hierarchy`: Search for parent or child blocks in the block hierarchy.
-9. `roam_find_pages_modified_today`: Find pages that have been modified today (since midnight).
-10. `roam_search_by_text`: Search for blocks containing specific text.
-11. `roam_update_block`: Update a single block identified by its UID.
-12. `roam_update_multiple_blocks`: Efficiently update multiple blocks in a single batch operation.
-13. `roam_search_by_status`: Search for blocks with a specific status (TODO/DONE) across all pages or within a specific page.
-14. `roam_search_by_date`: Search for blocks or pages based on creation or modification dates.
-15. `roam_search_for_tag`: Search for blocks containing a specific tag and optionally filter by blocks that also contain another tag nearby.
-16. `roam_remember`: Add a memory or piece of information to remember.
-17. `roam_recall`: Retrieve all stored memories.
-18. `roam_datomic_query`: Execute a custom Datomic query on the Roam graph beyond the available search tools.
-19. `roam_process_batch_actions`: Execute a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch.
+3. `roam_import_markdown`: Import nested markdown content under a specific block. (Internally uses `roam_process_batch_actions`.)
+4. `roam_add_todo`: Add a list of todo items to today's daily page. (Internally uses `roam_process_batch_actions`.)
+5. `roam_create_outline`: Add a structured outline to an existing page or block, with support for `children_view_type`. (Internally uses `roam_process_batch_actions`.)
+6. `roam_search_block_refs`: Search for block references within a page or across the entire graph.
+7. `roam_search_hierarchy`: Search for parent or child blocks in the block hierarchy.
+8. `roam_find_pages_modified_today`: Find pages that have been modified today (since midnight).
+9. `roam_search_by_text`: Search for blocks containing specific text.
+10. `roam_search_by_status`: Search for blocks with a specific status (TODO/DONE) across all pages or within a specific page.
+11. `roam_search_by_date`: Search for blocks or pages based on creation or modification dates.
+12. `roam_search_for_tag`: Search for blocks containing a specific tag and optionally filter by blocks that also contain another tag nearby.
+13. `roam_remember`: Add a memory or piece of information to remember. (Internally uses `roam_process_batch_actions`.)
+14. `roam_recall`: Retrieve all stored memories.
+15. `roam_datomic_query`: Execute a custom Datomic query on the Roam graph beyond the available search tools.
+16. `roam_process_batch_actions`: Execute a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch.
+
+**Deprecated Tools**:
+The following tools have been deprecated as of `v.0.30.0` in favor of the more powerful and flexible `roam_process_batch_actions`:
+
+- `roam_create_block`: Use `roam_process_batch_actions` with the `create-block` action.
+- `roam_update_block`: Use `roam_process_batch_actions` with the `update-block` action.
+- `roam_update_multiple_blocks`: Use `roam_process_batch_actions` with multiple `update-block` actions.
 
 ### Important Considerations for Tool Usage
 
@@ -136,6 +140,116 @@ Instead of:
 
 Prefer:
 `"parent_uid": "((some-unique-uid))"`
+
+**Migrating from Deprecated Tools:**
+The following examples demonstrate how to achieve the functionality of the deprecated tools using `roam_process_batch_actions`.
+
+**1. Replacing `roam_create_block`:**
+
+- **Old (Deprecated):**
+  ```json
+  {
+    "tool_name": "roam_create_block",
+    "arguments": {
+      "content": "New block content",
+      "page_uid": "((page-uid))"
+    }
+  }
+  ```
+- **New (Recommended):**
+  ```json
+  {
+    "tool_name": "roam_process_batch_actions",
+    "arguments": {
+      "actions": [
+        {
+          "action": "create-block",
+          "location": {
+            "parent-uid": "((page-uid))",
+            "order": "last"
+          },
+          "block": {
+            "string": "New block content"
+          }
+        }
+      ]
+    }
+  }
+  ```
+
+**2. Replacing `roam_update_block`:**
+
+- **Old (Deprecated):**
+  ```json
+  {
+    "tool_name": "roam_update_block",
+    "arguments": {
+      "block_uid": "((block-uid))",
+      "content": "Updated block content"
+    }
+  }
+  ```
+- **New (Recommended):**
+  ```json
+  {
+    "tool_name": "roam_process_batch_actions",
+    "arguments": {
+      "actions": [
+        {
+          "action": "update-block",
+          "uid": "((block-uid))",
+          "string": "Updated block content"
+        }
+      ]
+    }
+  }
+  ```
+
+**3. Replacing `roam_update_multiple_blocks`:**
+
+- **Old (Deprecated):**
+  ```json
+  {
+    "tool_name": "roam_update_multiple_blocks",
+    "arguments": {
+      "updates": [
+        {
+          "block_uid": "((block-uid-1))",
+          "content": "Content for block 1"
+        },
+        {
+          "block_uid": "((block-uid-2))",
+          "transform": {
+            "find": "old text",
+            "replace": "new text"
+          }
+        }
+      ]
+    }
+  }
+  ```
+- **New (Recommended):**
+  ```json
+  {
+    "tool_name": "roam_process_batch_actions",
+    "arguments": {
+      "actions": [
+        {
+          "action": "update-block",
+          "uid": "((block-uid-1))",
+          "string": "Content for block 1"
+        },
+        {
+          "action": "update-block",
+          "uid": "((block-uid-2))",
+          "string": "((block-content-with-new-text))"
+          // Note: Transformations (find/replace) must be handled by the client
+          // before sending the 'string' to roam_process_batch_actions.
+        }
+      ]
+    }
+  }
+  ```
 
 **Caveat Regarding Heading Formatting:**
 Please note that while the `roam_process_batch_actions` tool can set block headings (H1, H2, H3), directly **removing** an existing heading (i.e., reverting a heading block to a plain text block) through this tool is not currently supported by the Roam API. The `heading` attribute persists its value once set, and attempting to remove it by setting `heading` to `0`, `null`, or omitting the property will not unset the heading.
