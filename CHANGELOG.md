@@ -10,6 +10,7 @@ v.0.30.0
 - ENHANCED: `roam_create_outline`
   - Refactored to internally use `roam_process_batch_actions` for all block creations, including parent blocks.
   - Added support for `children_view_type` in outline items, allowing users to specify the display format (bullet, document, numbered) for nested blocks.
+- REFACTORED: `roam_import_markdown` to internally use `roam_process_batch_actions` for all content imports, enhancing efficiency and consistency.
 
 v.0.29.0
 

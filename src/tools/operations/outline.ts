@@ -496,20 +496,32 @@ export class OutlineOperations {
         created_uids: createdUids
       };
     } else {
-      // Create a simple block for non-nested content
+      // Create a simple block for non-nested content using batchActions
+      const actions = [{
+        action: 'create-block',
+        location: { 
+          "parent-uid": targetParentUid,
+          order
+        },
+        block: { string: content }
+      }];
+
       try {
-        await createBlock(this.graph, {
-          action: 'create-block',
-          location: { 
-            "parent-uid": targetParentUid,
-            order
-          },
-          block: { string: content }
+        const result = await batchActions(this.graph, {
+          action: 'batch-actions',
+          actions
         });
+
+        if (!result) {
+          throw new McpError(
+            ErrorCode.InternalError,
+            'Failed to create content block via batch action'
+          );
+        }
       } catch (error) {
         throw new McpError(
           ErrorCode.InternalError,
-          'Failed to create content block'
+          `Failed to create content block: ${error instanceof Error ? error.message : String(error)}`
         );
       }
 
