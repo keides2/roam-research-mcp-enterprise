@@ -1,3 +1,8 @@
+v.0.30.1
+
+- ENHANCED: `roam_process_batch_actions` tool description
+  - Clarified that Roam-flavored markdown, including block embedding with `((UID))` syntax, is supported within the `string` property for `create-block` and `update-block` actions.
+
 v.0.30.0
 
 - DEPRECATED: **Generic Block Manipulation Tools**:
