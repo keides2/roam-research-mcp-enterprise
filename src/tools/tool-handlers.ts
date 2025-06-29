@@ -41,21 +41,6 @@ export class ToolHandlers {
   }
 
   // Block Operations
-  async createBlock(content: string, page_uid?: string, title?: string, heading?: number) {
-    return this.blockOps.createBlock(content, page_uid, title, heading);
-  }
-
-  async updateBlock(block_uid: string, content?: string, transform?: (currentContent: string) => string) {
-    return this.blockOps.updateBlock(block_uid, content, transform);
-  }
-
-  async updateBlocks(updates: Array<{
-    block_uid: string;
-    content?: string;
-    transform?: { find: string; replace: string; global?: boolean };
-  }>) {
-    return this.blockOps.updateBlocks(updates);
-  }
 
   // Search Operations
   async searchByStatus(

@@ -1,3 +1,11 @@
+v.0.30.0
+
+- DEPRECATED: **Generic Block Manipulation Tools**:
+  - `roam_create_block`: Deprecated in favor of `roam_process_batch_actions` (action: `create-block`).
+  - `roam_update_block`: Deprecated in favor of `roam_process_batch_actions` (action: `update-block`).
+  - `roam_update_multiple_blocks`: Deprecated in favor of `roam_process_batch_actions` for batch updates.
+    Users are encouraged to use `roam_process_batch_actions` for all direct, generic block manipulations due to its enhanced flexibility and batch processing capabilities.
+
 v.0.29.0
 
 - ADDED: **Batch Processing Tool**: Introduced `roam_process_batch_actions`, a powerful new tool for executing a sequence of low-level block actions (create, update, move, delete) in a single API call. This enables complex, multi-step workflows, programmatic content reorganization, and high-performance data imports.

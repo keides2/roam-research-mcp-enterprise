@@ -80,34 +80,6 @@ export const toolSchemas = {
       required: ['title'],
     },
   },
-  roam_create_block: {
-    name: 'roam_create_block',
-    description: 'Add new block to an existing Roam page. If no page specified, adds to today\'s daily note. Best for capturing immediate thoughts, additions to discussions, or content that doesn\'t warrant its own page. Can specify page by title or UID.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        content: {
-          type: 'string',
-          description: 'Content of the block',
-        },
-        page_uid: {
-          type: 'string',
-          description: 'Optional: UID of the page to add block to (preferred for accuracy)',
-        },
-        title: {
-          type: 'string',
-          description: 'Optional: Title of the page to add block to (used if page_uid is not provided; defaults to today\'s date if neither is provided)',
-        },
-        heading: {
-          type: 'integer',
-          description: 'Optional: Heading formatting for this block (1-3)',
-          minimum: 1,
-          maximum: 3
-        }
-      },
-      required: ['content'],
-    },
-  },
   roam_create_outline: {
     name: 'roam_create_outline',
     description: 'Add a structured outline to an existing page or block (by title text or uid), with customizable nesting levels. Best for:\n- Adding supplementary structured content to existing pages\n- Creating temporary or working outlines (meeting notes, brainstorms)\n- Organizing thoughts or research under a specific topic\n- Breaking down subtopics or components of a larger concept',
@@ -312,94 +284,6 @@ export const toolSchemas = {
         }
       },
       required: ['text']
-    }
-  },
-  roam_update_block: {
-    name: 'roam_update_block',
-    description: 'Update a single block identified by its UID. Use this for individual block updates when you need to either replace the entire content or apply a transform pattern to modify specific parts of the content.\nNOTE Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        block_uid: {
-          type: 'string',
-          description: 'UID of the block to update'
-        },
-        content: {
-          type: 'string',
-          description: 'New content for the block. If not provided, transform_pattern will be used.'
-        },
-        transform_pattern: {
-          type: 'object',
-          description: 'Pattern to transform the current content. Used if content is not provided.',
-          properties: {
-            find: {
-              type: 'string',
-              description: 'Text or regex pattern to find'
-            },
-            replace: {
-              type: 'string',
-              description: 'Text to replace with'
-            },
-            global: {
-              type: 'boolean',
-              description: 'Whether to replace all occurrences',
-              default: true
-            }
-          },
-          required: ['find', 'replace']
-        }
-      },
-      required: ['block_uid']
-      // Note: Validation for either content or transform_pattern is handled in the server code
-    }
-  },
-  roam_update_multiple_blocks: {
-    name: 'roam_update_multiple_blocks',
-    description: 'Efficiently update multiple blocks in a single batch operation. Use this when you need to update several blocks at once to avoid making multiple separate API calls. Each block in the batch can independently either have its content replaced or transformed using a pattern.\nNOTE on Roam-flavored markdown: For direct linking: use [[link]] syntax. For aliased linking, use [alias]([[link]]) syntax. Do not concatenate words in links/hashtags - correct: #[[multiple words]] #self-esteem (for typically hyphenated words).',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        updates: {
-          type: 'array',
-          description: 'Array of block updates to perform',
-          items: {
-            type: 'object',
-            properties: {
-              block_uid: {
-                type: 'string',
-                description: 'UID of the block to update'
-              },
-              content: {
-                type: 'string',
-                description: 'New content for the block. If not provided, transform will be used.'
-              },
-              transform: {
-                type: 'object',
-                description: 'Pattern to transform the current content. Used if content is not provided.',
-                properties: {
-                  find: {
-                    type: 'string',
-                    description: 'Text or regex pattern to find'
-                  },
-                  replace: {
-                    type: 'string',
-                    description: 'Text to replace with'
-                  },
-                  global: {
-                    type: 'boolean',
-                    description: 'Whether to replace all occurrences',
-                    default: true
-                  }
-                },
-                required: ['find', 'replace']
-              }
-            },
-            required: ['block_uid']
-            // Note: Validation for either content or transform is handled in the server code
-          }
-        }
-      },
-      required: ['updates']
     }
   },
   roam_search_by_date: {
