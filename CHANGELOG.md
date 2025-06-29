@@ -5,6 +5,8 @@ v.0.30.0
   - `roam_update_block`: Deprecated in favor of `roam_process_batch_actions` (action: `update-block`).
   - `roam_update_multiple_blocks`: Deprecated in favor of `roam_process_batch_actions` for batch updates.
     Users are encouraged to use `roam_process_batch_actions` for all direct, generic block manipulations due to its enhanced flexibility and batch processing capabilities.
+- REFACTORED: `roam_add_todo` to internally use `roam_process_batch_actions` for all block creations, enhancing efficiency and consistency.
+- REFACTORED: `roam_remember` to internally use `roam_process_batch_actions` for all block creations, enhancing efficiency and consistency.
 
 v.0.29.0
 

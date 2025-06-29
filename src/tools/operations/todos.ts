@@ -44,44 +44,25 @@ export class TodoOperations {
       }
     }
 
-    // If more than 10 todos, use batch actions
     const todo_tag = "{{TODO}}";
-    if (todos.length > 10) {
-      const actions = todos.map((todo, index) => ({
-        action: 'create-block',
-        location: {
-          'parent-uid': targetPageUid,
-          order: index
-        },
-        block: {
-          string: `${todo_tag} ${todo}`
-        }
-      }));
-
-      const result = await batchActions(this.graph, {
-        action: 'batch-actions',
-        actions
-      });
-
-      if (!result) {
-        throw new Error('Failed to create todo blocks');
+    const actions = todos.map((todo, index) => ({
+      action: 'create-block',
+      location: {
+        'parent-uid': targetPageUid,
+        order: index
+      },
+      block: {
+        string: `${todo_tag} ${todo}`
       }
-    } else {
-      // Create todos sequentially
-      for (const todo of todos) {
-        try {
-          await createBlock(this.graph, {
-            action: 'create-block',
-            location: { 
-              "parent-uid": targetPageUid,
-              "order": "last"
-            },
-            block: { string: `${todo_tag} ${todo}` }
-          });
-        } catch (error) {
-          throw new Error('Failed to create todo block');
-        }
-      }
+    }));
+
+    const result = await batchActions(this.graph, {
+      action: 'batch-actions',
+      actions
+    });
+
+    if (!result) {
+      throw new Error('Failed to create todo blocks');
     }
     
     return { success: true };

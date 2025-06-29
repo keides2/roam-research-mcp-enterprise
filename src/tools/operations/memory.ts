@@ -1,4 +1,4 @@
-import { Graph, q, createBlock, createPage } from '@roam-research/roam-api-sdk';
+import { Graph, q, createPage, batchActions } from '@roam-research/roam-api-sdk';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
 import { formatRoamDate } from '../../utils/helpers.js';
 import { resolveRefs } from '../helpers/refs.js';
@@ -68,19 +68,33 @@ export class MemoryOperations {
     // Create block with memory, memories tag, and optional categories
     const blockContent = `${memoriesTag} ${memory} ${categoryTags}`.trim();
     
+    const actions = [{
+      action: 'create-block',
+      location: {
+        'parent-uid': pageUid,
+        order: 'last'
+      },
+      block: {
+        string: blockContent
+      }
+    }];
+
     try {
-      await createBlock(this.graph, {
-        action: 'create-block',
-        location: { 
-          "parent-uid": pageUid,
-          "order": "last"
-        },
-        block: { string: blockContent }
+      const result = await batchActions(this.graph, {
+        action: 'batch-actions',
+        actions
       });
+
+      if (!result) {
+        throw new McpError(
+          ErrorCode.InternalError,
+          'Failed to create memory block via batch action'
+        );
+      }
     } catch (error) {
       throw new McpError(
         ErrorCode.InternalError,
-        'Failed to create memory block'
+        `Failed to create memory block: ${error instanceof Error ? error.message : String(error)}`
       );
     }
 
