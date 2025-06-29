@@ -5,6 +5,7 @@ import { SearchOperations } from './operations/search/index.js';
 import { MemoryOperations } from './operations/memory.js';
 import { TodoOperations } from './operations/todos.js';
 import { OutlineOperations } from './operations/outline.js';
+import { BatchOperations } from './operations/batch.js';
 import { DatomicSearchHandlerImpl } from './operations/search/handlers.js';
 
 export class ToolHandlers {
@@ -14,6 +15,7 @@ export class ToolHandlers {
   private memoryOps: MemoryOperations;
   private todoOps: TodoOperations;
   private outlineOps: OutlineOperations;
+  private batchOps: BatchOperations;
 
   constructor(private graph: Graph) {
     this.pageOps = new PageOperations(graph);
@@ -22,6 +24,7 @@ export class ToolHandlers {
     this.memoryOps = new MemoryOperations(graph);
     this.todoOps = new TodoOperations(graph);
     this.outlineOps = new OutlineOperations(graph);
+    this.batchOps = new BatchOperations(graph);
   }
 
   // Page Operations
@@ -136,5 +139,10 @@ export class ToolHandlers {
     order: 'first' | 'last' = 'first'
   ) {
     return this.outlineOps.importMarkdown(content, page_uid, page_title, parent_uid, parent_string, order);
+  }
+
+  // Batch Operations
+  async processBatch(actions: any[]) {
+    return this.batchOps.processBatch(actions);
   }
 }

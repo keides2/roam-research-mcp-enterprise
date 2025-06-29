@@ -121,6 +121,24 @@ The server provides powerful tools for interacting with Roam Research:
 16. `roam_remember`: Add a memory or piece of information to remember.
 17. `roam_recall`: Retrieve all stored memories.
 18. `roam_datomic_query`: Execute a custom Datomic query on the Roam graph beyond the available search tools.
+19. `roam_process_batch_actions`: Execute a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch.
+
+### Important Considerations for Tool Usage
+
+When making changes to your Roam graph, precision in your requests is crucial for achieving desired outcomes.
+
+**Specificity in Requests:**
+Some tools allow for identifying blocks or pages by their text content (e.g., `parent_string`, `title`). While convenient, using **Unique Identifiers (UIDs)** is always preferred for accuracy and reliability. Text-based matching can be prone to errors if there are multiple blocks with similar content or if the content changes. Tools are designed to work best when provided with explicit UIDs where available.
+
+**Example of Specificity:**
+Instead of:
+`"parent_string": "My project notes"`
+
+Prefer:
+`"parent_uid": "((some-unique-uid))"`
+
+**Caveat Regarding Heading Formatting:**
+Please note that while the `roam_process_batch_actions` tool can set block headings (H1, H2, H3), directly **removing** an existing heading (i.e., reverting a heading block to a plain text block) through this tool is not currently supported by the Roam API. The `heading` attribute persists its value once set, and attempting to remove it by setting `heading` to `0`, `null`, or omitting the property will not unset the heading.
 
 ## Setup
 

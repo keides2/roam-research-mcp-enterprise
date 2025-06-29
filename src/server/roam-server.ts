@@ -349,6 +349,16 @@ export class RoamServer {
             };
           }
 
+          case 'roam_process_batch_actions': {
+            const { actions } = request.params.arguments as {
+              actions: any[];
+            };
+            const result = await this.toolHandlers.processBatch(actions);
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,

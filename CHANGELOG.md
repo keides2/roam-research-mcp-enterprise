@@ -1,3 +1,9 @@
+v.0.29.0
+
+- ADDED: **Batch Processing Tool**: Introduced `roam_process_batch_actions`, a powerful new tool for executing a sequence of low-level block actions (create, update, move, delete) in a single API call. This enables complex, multi-step workflows, programmatic content reorganization, and high-performance data imports.
+- ENHANCED: **Schema Clarity**: Updated the descriptions for multiple tool parameters in `src/tools/schemas.ts` to explicitly state that using a block or page UID is preferred over text-based identifiers for improved accuracy and reliability.
+- NOTE: **Heading Removal Limitation**: Discovered that directly removing heading formatting (e.g., setting `heading` to `0` or `null`) via `update-block` action in `roam_process_batch_actions` is not supported by the Roam API. The `heading` attribute persists its value.
+
 v.0.28.0
 
 - ADDED: **Configurable HTTP and SSE Ports**: The HTTP and SSE server ports can now be configured via environment variables (`HTTP_STREAM_PORT` and `SSE_PORT`).

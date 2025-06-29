@@ -6,3 +6,8 @@ export interface RoamBlock {
   heading?: number | null;
   children: RoamBlock[];
 }
+
+export type RoamBatchAction = {
+  action: 'create-block' | 'update-block' | 'move-block' | 'delete-block';
+  [key: string]: any;
+};

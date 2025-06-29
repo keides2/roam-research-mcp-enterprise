@@ -92,11 +92,11 @@ export const toolSchemas = {
         },
         page_uid: {
           type: 'string',
-          description: 'Optional: UID of the page to add block to',
+          description: 'Optional: UID of the page to add block to (preferred for accuracy)',
         },
         title: {
           type: 'string',
-          description: 'Optional: Title of the page to add block to (defaults to today\'s date if neither page_uid nor title provided)',
+          description: 'Optional: Title of the page to add block to (used if page_uid is not provided; defaults to today\'s date if neither is provided)',
         },
         heading: {
           type: 'integer',
@@ -116,11 +116,11 @@ export const toolSchemas = {
       properties: {
         page_title_uid: {
           type: 'string',
-          description: 'Title (or UID if known) of the page. Leave blank to use the default daily page'
+          description: 'Title or UID of the page (UID is preferred for accuracy). Leave blank to use the default daily page.'
         },
         block_text_uid: {
           type: 'string',
-          description: 'A relevant title heading for the outline or UID of the block under which outline content will be nested. If blank, content will be nested directly under the page. This can be either the text content of the block or its UID (if known).'
+          description: 'The text content or UID of the block to nest the outline under (UID is preferred for accuracy). If blank, content is nested directly under the page.'
         },
         outline: {
           type: 'array',
@@ -164,19 +164,19 @@ export const toolSchemas = {
         },
         page_uid: {
           type: 'string',
-          description: 'Optional: UID of the page containing the parent block'
+          description: 'Optional: UID of the page containing the parent block (preferred for accuracy).'
         },
         page_title: {
           type: 'string',
-          description: 'Optional: Title of the page containing the parent block (ignored if page_uid provided)'
+          description: 'Optional: Title of the page containing the parent block (used if page_uid is not provided).'
         },
         parent_uid: {
           type: 'string',
-          description: 'Optional: UID of the parent block to add content under'
+          description: 'Optional: UID of the parent block to add content under (preferred for accuracy).'
         },
         parent_string: {
           type: 'string',
-          description: 'Optional: Exact string content of the parent block to add content under (must provide either page_uid (preferred) or page_title)'
+          description: 'Optional: Exact string content of the parent block to add content under (used if parent_uid is not provided; requires page_uid or page_title).'
         },
         order: {
           type: 'string',
@@ -200,7 +200,7 @@ export const toolSchemas = {
         },
         page_title_uid: {
           type: 'string',
-          description: 'Optional: Title or UID of the page to search in. Defaults to today\'s daily page if not provided',
+          description: 'Optional: Title or UID of the page to search in (UID is preferred for accuracy). Defaults to today\'s daily page if not provided.',
         },
         near_tag: {
           type: 'string',
@@ -223,7 +223,7 @@ export const toolSchemas = {
         },
         page_title_uid: {
           type: 'string',
-          description: 'Optional: Title or UID of the page to search in. If not provided, searches across all pages'
+          description: 'Optional: Title or UID of the page to search in (UID is preferred for accuracy). If not provided, searches across all pages.'
         },
         include: {
           type: 'string',
@@ -249,7 +249,7 @@ export const toolSchemas = {
         },
         page_title_uid: {
           type: 'string',
-          description: 'Optional: Title or UID of the page to search in. If not provided, searches across all pages'
+          description: 'Optional: Title or UID of the page to search in (UID is preferred for accuracy). If not provided, searches across all pages.'
         }
       }
     }
@@ -270,7 +270,7 @@ export const toolSchemas = {
         },
         page_title_uid: {
           type: 'string',
-          description: 'Optional: Title or UID of the page to search in'
+          description: 'Optional: Title or UID of the page to search in (UID is preferred for accuracy).'
         },
         max_depth: {
           type: 'integer',
@@ -308,7 +308,7 @@ export const toolSchemas = {
         },
         page_title_uid: {
           type: 'string',
-          description: 'Optional: Title or UID of the page to search in. If not provided, searches across all pages'
+          description: 'Optional: Title or UID of the page to search in (UID is preferred for accuracy). If not provided, searches across all pages.'
         }
       },
       required: ['text']
@@ -494,6 +494,72 @@ export const toolSchemas = {
         }
       },
       required: ['query']
+    }
+  },
+  roam_process_batch_actions: {
+    name: 'roam_process_batch_actions',
+    description: 'Executes a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch. Actions are executed in the provided order. For creating nested blocks, you can use a temporary client-side UID in a parent block and refer to it in a child block within the same batch. For actions on existing blocks, a valid block UID is required.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        actions: {
+          type: 'array',
+          description: 'An array of action objects to execute in order.',
+          items: {
+            type: 'object',
+            properties: {
+              "action": {
+                type: 'string',
+                description: 'The specific action to perform.',
+                enum: ['create-block', 'update-block', 'move-block', 'delete-block']
+              },
+              "uid": {
+                type: 'string',
+                description: 'The UID of the block to target for "update-block", "move-block", or "delete-block" actions.'
+              },
+              "string": {
+                type: 'string',
+                description: 'The content for the block, used in "create-block" and "update-block" actions.'
+              },
+              "open": {
+                  type: "boolean",
+                  description: "Optional: Sets the open/closed state of a block, used in 'update-block' or 'create-block'. Defaults to true."
+              },
+              "heading": {
+                  type: "integer",
+                  description: "Optional: The heading level (1, 2, or 3) for 'create-block' or 'update-block'.",
+                  enum: [1, 2, 3]
+              },
+              "text-align": {
+                  type: "string",
+                  description: "Optional: The text alignment for 'create-block' or 'update-block'.",
+                  enum: ["left", "center", "right", "justify"]
+              },
+              "children-view-type": {
+                  type: "string",
+                  description: "Optional: The view type for children of the block, for 'create-block' or 'update-block'.",
+                  enum: ["bullet", "document", "numbered"]
+              },
+              "location": {
+                type: 'object',
+                description: 'Specifies where to place a block, used in "create-block" and "move-block" actions.',
+                properties: {
+                  "parent-uid": {
+                    type: 'string',
+                    description: 'The UID of the parent block or page.'
+                  },
+                  "order": {
+                    type: ['number', 'string'],
+                    description: 'The position of the block under its parent (0 for top, "last" for bottom).'
+                  }
+                }
+              }
+            },
+            required: ['action']
+          }
+        }
+      },
+      required: ['actions']
     }
   }
 };
