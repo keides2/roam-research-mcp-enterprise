@@ -31,6 +31,8 @@ export interface BlockUpdate {
 export interface OutlineItem {
   text: string | undefined;
   level: number;
+  heading?: number;
+  children_view_type?: 'bullet' | 'document' | 'numbered';
 }
 
 export { RoamBlock };

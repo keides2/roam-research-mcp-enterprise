@@ -7,6 +7,9 @@ v.0.30.0
     Users are encouraged to use `roam_process_batch_actions` for all direct, generic block manipulations due to its enhanced flexibility and batch processing capabilities.
 - REFACTORED: `roam_add_todo` to internally use `roam_process_batch_actions` for all block creations, enhancing efficiency and consistency.
 - REFACTORED: `roam_remember` to internally use `roam_process_batch_actions` for all block creations, enhancing efficiency and consistency.
+- ENHANCED: `roam_create_outline`
+  - Refactored to internally use `roam_process_batch_actions` for all block creations, including parent blocks.
+  - Added support for `children_view_type` in outline items, allowing users to specify the display format (bullet, document, numbered) for nested blocks.
 
 v.0.29.0
 

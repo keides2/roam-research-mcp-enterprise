@@ -115,6 +115,11 @@ export const toolSchemas = {
                 description: 'Optional: Heading formatting for this block (1-3)',
                 minimum: 1,
                 maximum: 3
+              },
+              children_view_type: {
+                type: 'string',
+                description: 'Optional: The view type for children of this block ("bullet", "document", or "numbered")',
+                enum: ["bullet", "document", "numbered"]
               }
             },
             required: ['text', 'level']

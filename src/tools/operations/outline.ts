@@ -195,15 +195,25 @@ export class OutlineOperations {
         for (let retry = 0; retry < maxRetries; retry++) {
           console.log(`Attempt ${retry + 1}/${maxRetries} to create block "${content}" under "${parentUid}"`);
 
-          // Create block
-          const success = await createBlock(this.graph, {
-            action: 'create-block',
-            location: {
-              'parent-uid': parentUid,
-              order: 'last'
-            },
-            block: { string: content }
+          // Create block using batchActions
+          const batchResult = await batchActions(this.graph, {
+            action: 'batch-actions',
+            actions: [{
+              action: 'create-block',
+              location: {
+                'parent-uid': parentUid,
+                order: 'last'
+              },
+              block: { string: content }
+            }]
           });
+
+          if (!batchResult) {
+            throw new McpError(
+              ErrorCode.InternalError,
+              `Failed to create block "${content}" via batch action`
+            );
+          }
 
           // Wait with exponential backoff
           const delay = initialDelay * Math.pow(2, retry);
@@ -305,7 +315,13 @@ export class OutlineOperations {
       const convertedContent = convertToRoamMarkdown(markdownContent);
 
       // Parse markdown into hierarchical structure
-      const nodes = parseMarkdown(convertedContent);
+      // We pass the original OutlineItem properties (heading, children_view_type)
+      // along with the parsed content to the nodes.
+      const nodes = parseMarkdown(convertedContent).map((node, index) => ({
+        ...node,
+        ...(validOutline[index].heading && { heading_level: validOutline[index].heading }),
+        ...(validOutline[index].children_view_type && { children_view_type: validOutline[index].children_view_type })
+      }));
 
       // Convert nodes to batch actions
       const actions = convertToRoamActions(nodes, targetParentUid, 'first');

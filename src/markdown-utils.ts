@@ -19,6 +19,7 @@ interface MarkdownNode {
   content: string;
   level: number;
   heading_level?: number;  // Optional heading level (1-3) for heading nodes
+  children_view_type?: 'bullet' | 'document' | 'numbered'; // Optional view type for children
   children: MarkdownNode[];
 }
 
@@ -330,6 +331,7 @@ interface BlockInfo {
   uid: string;
   content: string;
   heading_level?: number;  // Optional heading level (1-3) for heading nodes
+  children_view_type?: 'bullet' | 'document' | 'numbered'; // Optional view type for children
   children: BlockInfo[];
 }
 
@@ -364,7 +366,8 @@ function convertToRoamActions(
         block: {
           uid: block.uid,
           string: block.content,
-          ...(block.heading_level && { heading: block.heading_level })
+          ...(block.heading_level && { heading: block.heading_level }),
+          ...(block.children_view_type && { 'children-view-type': block.children_view_type })
         }
       };
       
