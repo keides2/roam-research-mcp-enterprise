@@ -387,7 +387,7 @@ export const toolSchemas = {
   },
   roam_process_batch_actions: {
     name: 'roam_process_batch_actions',
-    description: 'Executes a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch. Actions are executed in the provided order. For creating nested blocks, you can use a temporary client-side UID in a parent block and refer to it in a child block within the same batch. For actions on existing blocks, a valid block UID is required.',
+    description: 'Executes a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch. Actions are executed in the provided order. For creating nested blocks, you can use a temporary client-side UID in a parent block and refer to it in a child block within the same batch. For actions on existing blocks, a valid block UID is required. Note: Roam-flavored markdown, including block embedding with `((UID))` syntax, is supported within the `string` property for `create-block` and `update-block` actions.',
     inputSchema: {
       type: 'object',
       properties: {
