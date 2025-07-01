@@ -262,6 +262,9 @@ This demonstrates moving a block from one location to another and simultaneously
    Note: The server will first try to load from .env file, then fall back to environment variables from MCP settings.
 
 3. Build the server (make sure you're in the root directory of the MCP):
+
+   Note: Customize 'Roam_Markdown_Cheatsheet.md' with any notes and preferences specific to your graph BEFORE building.
+
    ```bash
    cd roam-research-mcp
    npm install
