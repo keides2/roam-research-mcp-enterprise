@@ -157,7 +157,7 @@ export const toolSchemas = {
         },
         order: {
           type: 'string',
-          description: 'Optional: Where to add the content under the parent ("first" or "last")',
+          description: 'Optional: Where to add the content undeIs this tr the parent ("first" or "last")',
           enum: ['first', 'last'],
           default: 'first'
         }
@@ -323,6 +323,15 @@ export const toolSchemas = {
       },
       required: ['start_date', 'type', 'scope']
     }
+  },
+  roam_markdown_cheatsheet: {
+    name: 'roam_markdown_cheatsheet',
+    description: 'Provides the content of the Roam Markdown Cheatsheet resource.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: [],
+    },
   },
   roam_remember: {
     name: 'roam_remember',

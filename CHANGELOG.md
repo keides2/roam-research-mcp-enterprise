@@ -1,3 +1,12 @@
+v.0.30.3
+
+- ADDED: `roam_markdown_cheatsheet` tool
+  - Provides the content of the Roam Markdown Cheatsheet directly via a tool call.
+  - The content is now read dynamically from `Roam_Markdown_Cheatsheet.md` on the filesystem.
+  - **Reason for Tool Creation:** While Cline can access local resources provided by an MCP server, other AI models (such as Claude AI) may not have this capability. By exposing the cheatsheet as a tool, it ensures broader accessibility and utility for all connected AI models, allowing them to programmatically request and receive the cheatsheet content when needed.
+- REMOVED: Roam Markdown Cheatsheet as a direct resource
+  - The cheatsheet is no longer exposed as a static resource; it is now accessed programmatically through the new `roam_markdown_cheatsheet` tool.
+
 v.0.30.2
 
 - ADDED: 4x4 table creation example

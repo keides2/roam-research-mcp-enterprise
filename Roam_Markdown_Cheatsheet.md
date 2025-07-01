@@ -72,4 +72,10 @@ Example of a 4x4 table structure:
 
 IMPORTANT: Always consult this cheatsheet for correct Roam-flavored markdown syntax BEFORE making any Roam tool calls.
 
+---
+
+## Specific notes and preferences concerning my Roam Research graph
+
+---
+
 ⭐️📋 END (Cheat Sheet LOADED) < < < 📋⭐️

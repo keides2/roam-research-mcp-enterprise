@@ -68,35 +68,25 @@ export class RoamServer {
 
     // List available resources
     mcpServer.setRequestHandler(ListResourcesRequestSchema, async () => {
-      const resources: Resource[] = [
-        {
-          name: 'Roam Markdown Cheatsheet',
-          uri: 'roam-markdown-cheatsheet.md',
-          type: 'text', // Changed from ResourceType.Text to string literal 'text'
-          description: 'A cheatsheet for Roam-flavored Markdown syntax.',
-        },
-      ];
+      const resources: Resource[] = []; // No resources, as cheatsheet is now a tool
       return { resources };
     });
 
-    // Access resource
+    // Access resource - no resources handled directly here anymore
     mcpServer.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-      if (request.params.uri === 'roam-markdown-cheatsheet.md') {
-        const cheatsheetPath = join(__dirname, '../../Roam_Markdown_Cheatsheet.md');
-        try {
-          const content = readFileSync(cheatsheetPath, 'utf8');
-          return { contents: [{ type: 'text', text: content, uri: request.params.uri }] };
-        } catch (error) {
-          throw new McpError(ErrorCode.InternalError, `Resource not found: ${request.params.uri}`); // Changed to InternalError
-        }
-      }
-      throw new McpError(ErrorCode.InternalError, `Resource not found: ${request.params.uri}`); // Changed to InternalError
+      throw new McpError(ErrorCode.InternalError, `Resource not found: ${request.params.uri}`);
     });
 
     // Handle tool calls
     mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
       try {
         switch (request.params.name) {
+          case 'roam_markdown_cheatsheet': {
+            const content = await this.toolHandlers.getRoamMarkdownCheatsheet();
+            return {
+              content: [{ type: 'text', text: content }],
+            };
+          }
           case 'roam_remember': {
             const { memory, categories } = request.params.arguments as {
               memory: string;

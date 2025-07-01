@@ -137,6 +137,8 @@ The following tools have been deprecated as of `v.0.30.0` in favor of the more p
 **Pre-computation and Context Loading:**
 ✅ Before attempting any Roam operations, **it is highly recommended** to load the `Roam Markdown Cheatsheet` resource into your context. This ensures you have immediate access to the correct Roam-flavored Markdown syntax, including details for tables, block references, and other special formatting. Example prompt: "Read the Roam cheatsheet first. Then, … <rest of your instructions>"
 
+- **Specific notes and preferences** concerning my Roam Research graph. Users can add their own specific notes and preferences for working with their own graph in the Cheatsheet.
+
 **Identifying Pages and Blocks for Manipulation:**
 To ensure accurate operations, always strive to identify target pages and blocks using their Unique Identifiers (UIDs) whenever possible. While some tools accept case-sensitive text titles or content, UIDs provide unambiguous references, reducing the risk of errors due to ambiguity or changes in text.
 

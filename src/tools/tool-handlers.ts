@@ -1,4 +1,7 @@
 import { Graph } from '@roam-research/roam-api-sdk';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 import { PageOperations } from './operations/pages.js';
 import { BlockOperations } from './operations/blocks.js';
 import { SearchOperations } from './operations/search/index.js';
@@ -129,5 +132,12 @@ export class ToolHandlers {
   // Batch Operations
   async processBatch(actions: any[]) {
     return this.batchOps.processBatch(actions);
+  }
+
+  async getRoamMarkdownCheatsheet() {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const cheatsheetPath = path.join(__dirname, '../../Roam_Markdown_Cheatsheet.md');
+    return fs.readFileSync(cheatsheetPath, 'utf-8');
   }
 }
