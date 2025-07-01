@@ -5,8 +5,11 @@ import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import {
   CallToolRequestSchema,
   ErrorCode,
-  ListToolsRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
   McpError,
+  Resource,
+  ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { initializeGraph, type Graph } from '@roam-research/roam-api-sdk';
 import { API_TOKEN, GRAPH_NAME, HTTP_STREAM_PORT, SSE_PORT } from '../config/environment.js';
@@ -31,6 +34,7 @@ export class RoamServer {
   private graph: Graph;
 
   constructor() {
+    console.log('RoamServer: Constructor started.');
     try {
       this.graph = initializeGraph({
         token: API_TOKEN,
@@ -52,6 +56,7 @@ export class RoamServer {
     if (Object.keys(toolSchemas).length === 0) {
       throw new McpError(ErrorCode.InternalError, 'No tool schemas defined in src/tools/schemas.ts');
     }
+    console.log('RoamServer: Constructor finished.');
   }
 
   // Refactored to accept a Server instance
@@ -60,6 +65,33 @@ export class RoamServer {
     mcpServer.setRequestHandler(ListToolsRequestSchema, async () => ({
       tools: Object.values(toolSchemas),
     }));
+
+    // List available resources
+    mcpServer.setRequestHandler(ListResourcesRequestSchema, async () => {
+      const resources: Resource[] = [
+        {
+          name: 'Roam Markdown Cheatsheet',
+          uri: 'roam-markdown-cheatsheet.md',
+          type: 'text', // Changed from ResourceType.Text to string literal 'text'
+          description: 'A cheatsheet for Roam-flavored Markdown syntax.',
+        },
+      ];
+      return { resources };
+    });
+
+    // Access resource
+    mcpServer.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+      if (request.params.uri === 'roam-markdown-cheatsheet.md') {
+        const cheatsheetPath = join(__dirname, '../../Roam_Markdown_Cheatsheet.md');
+        try {
+          const content = readFileSync(cheatsheetPath, 'utf8');
+          return { contents: [{ type: 'text', text: content, uri: request.params.uri }] };
+        } catch (error) {
+          throw new McpError(ErrorCode.InternalError, `Resource not found: ${request.params.uri}`); // Changed to InternalError
+        }
+      }
+      throw new McpError(ErrorCode.InternalError, `Resource not found: ${request.params.uri}`); // Changed to InternalError
+    });
 
     // Handle tool calls
     mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
@@ -302,7 +334,9 @@ export class RoamServer {
   }
 
   async run() {
+    console.log('RoamServer: run() method started.');
     try {
+      console.log('RoamServer: Attempting to create stdioMcpServer...');
       const stdioMcpServer = new Server(
         {
           name: 'roam-research',
@@ -315,13 +349,19 @@ export class RoamServer {
                 Object.keys(toolSchemas).map((toolName) => [toolName, {}])
               ),
             },
+            resources: { // Add resources capability
+              'roam-markdown-cheatsheet.md': {}
+            }
           },
         }
       );
+      console.log('RoamServer: stdioMcpServer created. Setting up request handlers...');
       this.setupRequestHandlers(stdioMcpServer);
+      console.log('RoamServer: stdioMcpServer handlers setup complete. Connecting transport...');
 
       const stdioTransport = new StdioServerTransport();
       await stdioMcpServer.connect(stdioTransport);
+      console.log('RoamServer: stdioTransport connected. Attempting to create httpMcpServer...');
 
       const httpMcpServer = new Server(
         {
@@ -335,15 +375,21 @@ export class RoamServer {
                 Object.keys(toolSchemas).map((toolName) => [toolName, {}])
               ),
             },
+            resources: { // Add resources capability
+              'roam-markdown-cheatsheet.md': {}
+            }
           },
         }
       );
+      console.log('RoamServer: httpMcpServer created. Setting up request handlers...');
       this.setupRequestHandlers(httpMcpServer);
+      console.log('RoamServer: httpMcpServer handlers setup complete. Connecting transport...');
 
       const httpStreamTransport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
       });
       await httpMcpServer.connect(httpStreamTransport);
+      console.log('RoamServer: httpStreamTransport connected.');
 
       const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
         try {

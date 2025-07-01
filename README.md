@@ -102,12 +102,13 @@ The server provides powerful tools for interacting with Roam Research:
 - Detailed debug logging
 - Efficient batch operations
 - Hierarchical outline creation
+- Enhanced documentation for Roam Tables in `Roam_Markdown_Cheatsheet.md` for clearer guidance on nesting.
 
 1. `roam_fetch_page_by_title`: Fetch page content by title. Returns content in the specified format.
 2. `roam_create_page`: Create new pages with optional content and headings.
 3. `roam_import_markdown`: Import nested markdown content under a specific block. (Internally uses `roam_process_batch_actions`.)
 4. `roam_add_todo`: Add a list of todo items to today's daily page. (Internally uses `roam_process_batch_actions`.)
-5. `roam_create_outline`: Add a structured outline to an existing page or block, with support for `children_view_type`. If `page_title_uid` and `block_text_uid` are both blank, content defaults to the daily page. (Internally uses `roam_process_batch_actions`.)
+5. `roam_create_outline`: Add a structured outline to an existing page or block, with support for `children_view_type`. Best for simpler, sequential outlines. For complex nesting (e.g., tables), consider `roam_process_batch_actions`. If `page_title_uid` and `block_text_uid` are both blank, content defaults to the daily page. (Internally uses `roam_process_batch_actions`.)
 6. `roam_search_block_refs`: Search for block references within a page or across the entire graph.
 7. `roam_search_hierarchy`: Search for parent or child blocks in the block hierarchy.
 8. `roam_find_pages_modified_today`: Find pages that have been modified today (since midnight).
@@ -118,7 +119,7 @@ The server provides powerful tools for interacting with Roam Research:
 13. `roam_remember`: Add a memory or piece of information to remember. (Internally uses `roam_process_batch_actions`.)
 14. `roam_recall`: Retrieve all stored memories.
 15. `roam_datomic_query`: Execute a custom Datomic query on the Roam graph for advanced data retrieval beyond the available search tools.
-16. `roam_process_batch_actions`: Execute a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch. (Note: For actions on existing blocks or within a specific page context, it is often necessary to first obtain valid page or block UIDs using tools like `roam_fetch_page_by_title`.)
+16. `roam_process_batch_actions`: Execute a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch. Provides granular control for complex nesting like tables. (Note: For actions on existing blocks or within a specific page context, it is often necessary to first obtain valid page or block UIDs using tools like `roam_fetch_page_by_title`.)
 
 **Deprecated Tools**:
 The following tools have been deprecated as of `v.0.30.0` in favor of the more powerful and flexible `roam_process_batch_actions`:
@@ -127,7 +128,27 @@ The following tools have been deprecated as of `v.0.30.0` in favor of the more p
 - `roam_update_block`: Use `roam_process_batch_actions` with the `update-block` action.
 - `roam_update_multiple_blocks`: Use `roam_process_batch_actions` with multiple `update-block` actions.
 
-### Important Considerations for Tool Usage
+---
+
+### Tool Usage Guidelines and Best Practices
+
+**Pre-computation and Context Loading:**
+✅ Before attempting any Roam operations, **it is highly recommended** to load the `Roam Markdown Cheatsheet` resource into your context. This ensures you have immediate access to the correct Roam-flavored Markdown syntax, including details for tables, block references, and other special formatting. Example prompt: "Read the Roam cheatsheet first. Then, … <rest of your instructions>"
+
+**Identifying Pages and Blocks for Manipulation:**
+To ensure accurate operations, always strive to identify target pages and blocks using their Unique Identifiers (UIDs) whenever possible. While some tools accept case-sensitive text titles or content, UIDs provide unambiguous references, reducing the risk of errors due to ambiguity or changes in text.
+
+- **For Pages:** Use `roam_fetch_page_by_title` to retrieve a page's UID if you only have its title. Example: "Read the page titled 'Trip to Las Vegas'"
+- **For Blocks:** If you need to manipulate an existing block, first use search tools like `roam_search_by_text`, `roam_search_for_tag`, or `roam_fetch_page_by_title` (with raw format) to find the block and obtain its UID. If the block exists on a page that has already been read, then a search isn't necessary.
+
+**Case-Sensitivity:**
+Be aware that text-based inputs (e.g., page titles, block content for search) are generally case-sensitive in Roam. Always match the exact casing of the text as it appears in your graph.
+
+**Iterative Refinement and Verification:**
+For complex operations, especially those involving nested structures or multiple changes, it is often beneficial to break down the task into smaller, verifiable steps. After each significant tool call, consider fetching the affected content to verify the changes before proceeding.
+
+**Understanding Tool Nuances:**
+Familiarize yourself with the specific behaviors and limitations of each tool. For instance, `roam_create_outline` is best for sequential outlines, while `roam_process_batch_actions` offers granular control for complex structures like tables. Refer to the individual tool descriptions for detailed usage notes.
 
 When making changes to your Roam graph, precision in your requests is crucial for achieving desired outcomes.
 
@@ -141,118 +162,10 @@ Instead of:
 Prefer:
 `"parent_uid": "((some-unique-uid))"`
 
-**Migrating from Deprecated Tools:**
-The following examples demonstrate how to achieve the functionality of the deprecated tools using `roam_process_batch_actions`.
-
-**1. Replacing `roam_create_block`:**
-
-- **Old (Deprecated):**
-  ```json
-  {
-    "tool_name": "roam_create_block",
-    "arguments": {
-      "content": "New block content",
-      "page_uid": "((page-uid))"
-    }
-  }
-  ```
-- **New (Recommended):**
-  ```json
-  {
-    "tool_name": "roam_process_batch_actions",
-    "arguments": {
-      "actions": [
-        {
-          "action": "create-block",
-          "location": {
-            "parent-uid": "((page-uid))",
-            "order": "last"
-          },
-          "block": {
-            "string": "New block content"
-          }
-        }
-      ]
-    }
-  }
-  ```
-
-**2. Replacing `roam_update_block`:**
-
-- **Old (Deprecated):**
-  ```json
-  {
-    "tool_name": "roam_update_block",
-    "arguments": {
-      "block_uid": "((block-uid))",
-      "content": "Updated block content"
-    }
-  }
-  ```
-- **New (Recommended):**
-  ```json
-  {
-    "tool_name": "roam_process_batch_actions",
-    "arguments": {
-      "actions": [
-        {
-          "action": "update-block",
-          "uid": "((block-uid))",
-          "string": "Updated block content"
-        }
-      ]
-    }
-  }
-  ```
-
-**3. Replacing `roam_update_multiple_blocks`:**
-
-- **Old (Deprecated):**
-  ```json
-  {
-    "tool_name": "roam_update_multiple_blocks",
-    "arguments": {
-      "updates": [
-        {
-          "block_uid": "((block-uid-1))",
-          "content": "Content for block 1"
-        },
-        {
-          "block_uid": "((block-uid-2))",
-          "transform": {
-            "find": "old text",
-            "replace": "new text"
-          }
-        }
-      ]
-    }
-  }
-  ```
-- **New (Recommended):**
-  ```json
-  {
-    "tool_name": "roam_process_batch_actions",
-    "arguments": {
-      "actions": [
-        {
-          "action": "update-block",
-          "uid": "((block-uid-1))",
-          "string": "Content for block 1"
-        },
-        {
-          "action": "update-block",
-          "uid": "((block-uid-2))",
-          "string": "((block-content-with-new-text))"
-          // Note: Transformations (find/replace) must be handled by the client
-          // before sending the 'string' to roam_process_batch_actions.
-        }
-      ]
-    }
-  }
-  ```
-
 **Caveat Regarding Heading Formatting:**
 Please note that while the `roam_process_batch_actions` tool can set block headings (H1, H2, H3), directly **removing** an existing heading (i.e., reverting a heading block to a plain text block) through this tool is not currently supported by the Roam API. The `heading` attribute persists its value once set, and attempting to remove it by setting `heading` to `0`, `null`, or omitting the property will not unset the heading.
+
+---
 
 ## Example Prompts
 
@@ -293,6 +206,8 @@ This demonstrates moving a block from one location to another and simultaneously
 ```
 "Move the block 'Important note about client feedback' (from page 'Meeting Notes 2025-06-30') under the 'Action Items' section on the 'Project Alpha Planning' page, and change its content to 'Client feedback reviewed and incorporated'."
 ```
+
+---
 
 ## Setup
 
@@ -372,6 +287,8 @@ Each error response includes:
 - Standard MCP error code
 - Detailed error message
 - Suggestions for resolution when applicable
+
+---
 
 ## Development
 

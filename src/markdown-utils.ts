@@ -53,7 +53,7 @@ function convertTableToRoamFormat(text: string) {
         .map(cell => cell.trim())
     );
 
-  let roamTable = '{{table}}\n';
+  let roamTable = '{{[[table]]}}\n';
   
   // First row becomes column headers
   const headers = rows[0];

@@ -34,7 +34,7 @@
     "start": "node build/index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.13.2",
     "@roam-research/roam-api-sdk": "^0.10.0",
     "dotenv": "^16.4.7"
   },

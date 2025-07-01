@@ -1,3 +1,12 @@
+v.0.30.2
+
+- ADDED: 4x4 table creation example
+  - Created a 4x4 table with random data on the "Testing Tables" page, demonstrating proper Roam table structure.
+- ENHANCED: `Roam_Markdown_Cheatsheet.md`
+  - Updated the "Roam Tables" section with a more detailed explanation of table structure, including proper indentation levels for headers and data cells.
+- ENHANCED: `src/tools/schemas.ts`
+  - Clarified the distinction between `roam_create_outline` and `roam_process_batch_actions` in their respective descriptions, providing guidance on their best use cases.
+
 v.0.30.1
 
 - ENHANCED: `roam_process_batch_actions` tool description
