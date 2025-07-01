@@ -211,6 +211,14 @@ This demonstrates moving a block from one location to another and simultaneously
 "Move the block 'Important note about client feedback' (from page 'Meeting Notes 2025-06-30') under the 'Action Items' section on the 'Project Alpha Planning' page, and change its content to 'Client feedback reviewed and incorporated'."
 ```
 
+### Example 4: Making a Table
+
+This demonstrates moving a block from one location to another and simultaneously updating its content.
+
+```
+"In Roam, add a new table on the page "Fruity Tables" that compares four types of fruits: apples, oranges, grapes, and dates. Choose randomly four areas to compare."
+```
+
 ---
 
 ## Setup
