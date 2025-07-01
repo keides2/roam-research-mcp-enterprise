@@ -103,11 +103,11 @@ The server provides powerful tools for interacting with Roam Research:
 - Efficient batch operations
 - Hierarchical outline creation
 
-1. `roam_fetch_page_by_title`: Fetch page content by title.
+1. `roam_fetch_page_by_title`: Fetch page content by title. Returns content in the specified format.
 2. `roam_create_page`: Create new pages with optional content and headings.
 3. `roam_import_markdown`: Import nested markdown content under a specific block. (Internally uses `roam_process_batch_actions`.)
 4. `roam_add_todo`: Add a list of todo items to today's daily page. (Internally uses `roam_process_batch_actions`.)
-5. `roam_create_outline`: Add a structured outline to an existing page or block, with support for `children_view_type`. (Internally uses `roam_process_batch_actions`.)
+5. `roam_create_outline`: Add a structured outline to an existing page or block, with support for `children_view_type`. If `page_title_uid` and `block_text_uid` are both blank, content defaults to the daily page. (Internally uses `roam_process_batch_actions`.)
 6. `roam_search_block_refs`: Search for block references within a page or across the entire graph.
 7. `roam_search_hierarchy`: Search for parent or child blocks in the block hierarchy.
 8. `roam_find_pages_modified_today`: Find pages that have been modified today (since midnight).
@@ -117,8 +117,8 @@ The server provides powerful tools for interacting with Roam Research:
 12. `roam_search_for_tag`: Search for blocks containing a specific tag and optionally filter by blocks that also contain another tag nearby.
 13. `roam_remember`: Add a memory or piece of information to remember. (Internally uses `roam_process_batch_actions`.)
 14. `roam_recall`: Retrieve all stored memories.
-15. `roam_datomic_query`: Execute a custom Datomic query on the Roam graph beyond the available search tools.
-16. `roam_process_batch_actions`: Execute a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch.
+15. `roam_datomic_query`: Execute a custom Datomic query on the Roam graph for advanced data retrieval beyond the available search tools.
+16. `roam_process_batch_actions`: Execute a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch. (Note: For actions on existing blocks or within a specific page context, it is often necessary to first obtain valid page or block UIDs using tools like `roam_fetch_page_by_title`.)
 
 **Deprecated Tools**:
 The following tools have been deprecated as of `v.0.30.0` in favor of the more powerful and flexible `roam_process_batch_actions`:
@@ -253,6 +253,46 @@ The following examples demonstrate how to achieve the functionality of the depre
 
 **Caveat Regarding Heading Formatting:**
 Please note that while the `roam_process_batch_actions` tool can set block headings (H1, H2, H3), directly **removing** an existing heading (i.e., reverting a heading block to a plain text block) through this tool is not currently supported by the Roam API. The `heading` attribute persists its value once set, and attempting to remove it by setting `heading` to `0`, `null`, or omitting the property will not unset the heading.
+
+## Example Prompts
+
+Here are some examples of how to creatively use the Roam tool in an LLM to interact with your Roam graph, particularly leveraging `roam_process_batch_actions` for complex operations.
+
+### Example 1: Creating a Project Outline
+
+This prompt demonstrates creating a new page and populating it with a structured outline using a single `roam_process_batch_actions` call.
+
+```
+"Create a new Roam page titled 'Project Alpha Planning' and add the following outline:
+- Overview
+  - Goals
+  - Scope
+- Team Members
+  - John Doe
+  - Jane Smith
+- Tasks
+  - Task 1
+    - Subtask 1.1
+    - Subtask 1.2
+  - Task 2
+- Deadlines"
+```
+
+### Example 2: Updating Multiple To-Dos and Adding a New One
+
+This example shows how to mark existing to-do items as `DONE` and add a new one, all within a single batch.
+
+```
+"Mark 'Finish report' and 'Review presentation' as done on today's daily page, and add a new todo 'Prepare for meeting'."
+```
+
+### Example 3: Moving and Updating a Block
+
+This demonstrates moving a block from one location to another and simultaneously updating its content.
+
+```
+"Move the block 'Important note about client feedback' (from page 'Meeting Notes 2025-06-30') under the 'Action Items' section on the 'Project Alpha Planning' page, and change its content to 'Client feedback reviewed and incorporated'."
+```
 
 ## Setup
 

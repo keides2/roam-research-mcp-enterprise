@@ -2,6 +2,12 @@ v.0.30.1
 
 - ENHANCED: `roam_process_batch_actions` tool description
   - Clarified that Roam-flavored markdown, including block embedding with `((UID))` syntax, is supported within the `string` property for `create-block` and `update-block` actions.
+  - Added a note advising users to obtain valid page or block UIDs using `roam_fetch_page_by_title` or other search tools for actions on existing blocks or within a specific page context.
+  - Clarified the `block_text_uid` description for `roam_create_outline` to explicitly mention defaulting to the daily page.
+  - Simplified the top-level description for `roam_fetch_page_by_title`.
+  - Refined the introductory sentence for `roam_datomic_query`.
+- ADDED: "Example Prompts" section in `README.md`
+  - Provided 2-3 examples demonstrating how to prompt an LLM to use the Roam tool, specifically leveraging `roam_process_batch_actions` for creative use cases.
 
 v.0.30.0
 

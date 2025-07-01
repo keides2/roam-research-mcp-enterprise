@@ -20,7 +20,7 @@ export const toolSchemas = {
   },
   roam_fetch_page_by_title: {
     name: 'roam_fetch_page_by_title',
-    description: 'Fetch page by title, defaults to raw JSON string.',
+    description: 'Fetch page by title. Returns content in the specified format.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -92,7 +92,7 @@ export const toolSchemas = {
         },
         block_text_uid: {
           type: 'string',
-          description: 'The text content or UID of the block to nest the outline under (UID is preferred for accuracy). If blank, content is nested directly under the page.'
+          description: 'The text content or UID of the block to nest the outline under (UID is preferred for accuracy). If blank, content is nested directly under the page (or the default daily page if page_title_uid is also blank).'
         },
         outline: {
           type: 'array',
@@ -366,7 +366,7 @@ export const toolSchemas = {
   },
   roam_datomic_query: {
     name: 'roam_datomic_query',
-    description: 'Execute a custom Datomic query on the Roam graph beyond the available search tools. This provides direct access to Roam\'s query engine for advanced data retrieval. Note: Roam graph is case-sensitive.\nList of some of Roam\'s data model Namespaces and Attributes: ancestor (descendants), attrs (lookup), block (children, heading, open, order, page, parents, props, refs, string, text-align, uid), children (view-type), create (email, time), descendant (ancestors), edit (email, seen-by, time), entity (attrs), log (id), node (title), page (uid, title), refs (text).\nPredicates (clojure.string/includes?, clojure.string/starts-with?, clojure.string/ends-with?, <, >, <=, >=, =, not=, !=).\nAggregates (distinct, count, sum, max, min, avg, limit).\nTips: Use :block/parents for all ancestor levels, :block/children for direct descendants only; combine clojure.string for complex matching, use distinct to deduplicate, leverage Pull patterns for hierarchies, handle case-sensitivity carefully, and chain ancestry rules for multi-level queries.',
+    description: 'Execute a custom Datomic query on the Roam graph for advanced data retrieval beyond the available search tools. This provides direct access to Roam\'s query engine. Note: Roam graph is case-sensitive.\nList of some of Roam\'s data model Namespaces and Attributes: ancestor (descendants), attrs (lookup), block (children, heading, open, order, page, parents, props, refs, string, text-align, uid), children (view-type), create (email, time), descendant (ancestors), edit (email, seen-by, time), entity (attrs), log (id), node (title), page (uid, title), refs (text).\nPredicates (clojure.string/includes?, clojure.string/starts-with?, clojure.string/ends-with?, <, >, <=, >=, =, not=, !=).\nAggregates (distinct, count, sum, max, min, avg, limit).\nTips: Use :block/parents for all ancestor levels, :block/children for direct descendants only; combine clojure.string for complex matching, use distinct to deduplicate, leverage Pull patterns for hierarchies, handle case-sensitivity carefully, and chain ancestry rules for multi-level queries.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -387,7 +387,7 @@ export const toolSchemas = {
   },
   roam_process_batch_actions: {
     name: 'roam_process_batch_actions',
-    description: 'Executes a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch. Actions are executed in the provided order. For creating nested blocks, you can use a temporary client-side UID in a parent block and refer to it in a child block within the same batch. For actions on existing blocks, a valid block UID is required. Note: Roam-flavored markdown, including block embedding with `((UID))` syntax, is supported within the `string` property for `create-block` and `update-block` actions.',
+    description: 'Executes a sequence of low-level block actions (create, update, move, delete) in a single, non-transactional batch. Actions are executed in the provided order. For creating nested blocks, you can use a temporary client-side UID in a parent block and refer to it in a child block within the same batch. For actions on existing blocks, a valid block UID is required. Note: Roam-flavored markdown, including block embedding with `((UID))` syntax, is supported within the `string` property for `create-block` and `update-block` actions. For actions on existing blocks or within a specific page context, it is often necessary to first obtain valid page or block UIDs. Tools like `roam_fetch_page_by_title` or other search tools can be used to retrieve these UIDs before executing batch actions.',
     inputSchema: {
       type: 'object',
       properties: {
