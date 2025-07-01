@@ -34,7 +34,7 @@ export class RoamServer {
   private graph: Graph;
 
   constructor() {
-    console.log('RoamServer: Constructor started.');
+    // console.log('RoamServer: Constructor started.');
     try {
       this.graph = initializeGraph({
         token: API_TOKEN,
@@ -56,7 +56,7 @@ export class RoamServer {
     if (Object.keys(toolSchemas).length === 0) {
       throw new McpError(ErrorCode.InternalError, 'No tool schemas defined in src/tools/schemas.ts');
     }
-    console.log('RoamServer: Constructor finished.');
+    // console.log('RoamServer: Constructor finished.');
   }
 
   // Refactored to accept a Server instance
@@ -334,9 +334,9 @@ export class RoamServer {
   }
 
   async run() {
-    console.log('RoamServer: run() method started.');
+    // console.log('RoamServer: run() method started.');
     try {
-      console.log('RoamServer: Attempting to create stdioMcpServer...');
+      // console.log('RoamServer: Attempting to create stdioMcpServer...');
       const stdioMcpServer = new Server(
         {
           name: 'roam-research',
@@ -355,13 +355,13 @@ export class RoamServer {
           },
         }
       );
-      console.log('RoamServer: stdioMcpServer created. Setting up request handlers...');
+      // console.log('RoamServer: stdioMcpServer created. Setting up request handlers...');
       this.setupRequestHandlers(stdioMcpServer);
-      console.log('RoamServer: stdioMcpServer handlers setup complete. Connecting transport...');
+      // console.log('RoamServer: stdioMcpServer handlers setup complete. Connecting transport...');
 
       const stdioTransport = new StdioServerTransport();
       await stdioMcpServer.connect(stdioTransport);
-      console.log('RoamServer: stdioTransport connected. Attempting to create httpMcpServer...');
+      // console.log('RoamServer: stdioTransport connected. Attempting to create httpMcpServer...');
 
       const httpMcpServer = new Server(
         {
@@ -381,21 +381,21 @@ export class RoamServer {
           },
         }
       );
-      console.log('RoamServer: httpMcpServer created. Setting up request handlers...');
+      // console.log('RoamServer: httpMcpServer created. Setting up request handlers...');
       this.setupRequestHandlers(httpMcpServer);
-      console.log('RoamServer: httpMcpServer handlers setup complete. Connecting transport...');
+      // console.log('RoamServer: httpMcpServer handlers setup complete. Connecting transport...');
 
       const httpStreamTransport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15),
       });
       await httpMcpServer.connect(httpStreamTransport);
-      console.log('RoamServer: httpStreamTransport connected.');
+      // console.log('RoamServer: httpStreamTransport connected.');
 
       const httpServer = createServer(async (req: IncomingMessage, res: ServerResponse) => {
         try {
           await httpStreamTransport.handleRequest(req, res);
         } catch (error) {
-          // console.error('HTTP Stream Server error:', error);
+          // // console.error('HTTP Stream Server error:', error);
           if (!res.headersSent) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Internal Server Error' }));
@@ -405,7 +405,7 @@ export class RoamServer {
 
       const availableHttpPort = await findAvailablePort(parseInt(HTTP_STREAM_PORT));
       httpServer.listen(availableHttpPort, () => {
-        // console.log(`MCP Roam Research server running HTTP Stream on port ${availableHttpPort}`);
+        // // console.log(`MCP Roam Research server running HTTP Stream on port ${availableHttpPort}`);
       });
 
       // SSE Server setup
@@ -462,7 +462,7 @@ export class RoamServer {
             res.end('Not Found');
           }
         } catch (error) {
-          // console.error('SSE HTTP Server error:', error);
+          // // console.error('SSE HTTP Server error:', error);
           if (!res.headersSent) {
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: 'Internal Server Error' }));
@@ -472,7 +472,7 @@ export class RoamServer {
 
       const availableSsePort = await findAvailablePort(parseInt(SSE_PORT));
       sseHttpServer.listen(availableSsePort, () => {
-        // console.log(`MCP Roam Research server running SSE on port ${availableSsePort}`);
+        // // console.log(`MCP Roam Research server running SSE on port ${availableSsePort}`);
       });
 
     } catch (error: unknown) {
