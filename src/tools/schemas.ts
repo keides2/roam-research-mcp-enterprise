@@ -82,7 +82,7 @@ export const toolSchemas = {
   },
   roam_create_outline: {
     name: 'roam_create_outline',
-    description: 'Add a structured outline to an existing page or block (by title text or uid), with customizable nesting levels. Best for:\n- Adding supplementary structured content to existing pages\n- Creating temporary or working outlines (meeting notes, brainstorms)\n- Organizing thoughts or research under a specific topic\n- Breaking down subtopics or components of a larger concept\nBest for simpler, contiguous hierarchical content. For complex nesting (e.g., tables) or granular control over block placement, consider `roam_process_batch_actions` instead.\nIMPORTANT: Before using this tool, ensure that you have loaded into context the \'Roam Markdown Cheatsheet\' resource.',
+    description: 'Add a structured outline to an existing page or block (by title text or uid), with customizable nesting levels. The `outline` parameter defines *new* blocks to be created. To nest content under an *existing* block, provide its UID or exact text in `block_text_uid`, and ensure the `outline` array contains only the child blocks with levels relative to that parent. Including the parent block\'s text in the `outline` array will create a duplicate block. Best for:\n- Adding supplementary structured content to existing pages\n- Creating temporary or working outlines (meeting notes, brainstorms)\n- Organizing thoughts or research under a specific topic\n- Breaking down subtopics or components of a larger concept\nBest for simpler, contiguous hierarchical content. For complex nesting (e.g., tables) or granular control over block placement, consider `roam_process_batch_actions` instead.\nIMPORTANT: Before using this tool, ensure that you have loaded into context the \'Roam Markdown Cheatsheet\' resource.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -426,7 +426,7 @@ export const toolSchemas = {
               "heading": {
                   type: "integer",
                   description: "Optional: The heading level (1, 2, or 3) for 'create-block' or 'update-block'.",
-                  enum: [1, 2, 3]
+                  enum: ["1", "2", "3"]
               },
               "text-align": {
                   type: "string",

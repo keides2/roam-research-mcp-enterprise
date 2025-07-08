@@ -1,6 +1,8 @@
 v.0.30.4
 
 - FIXED: Tools not loading properly in Gemini CLI
+- Clarified outline description
+- FIXED: `roam_process_batch_actions` `heading` enum type in `schemas.ts` for Gemini CLI compatibility.
 
 v.0.30.3
 
