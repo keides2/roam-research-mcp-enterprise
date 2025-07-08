@@ -447,8 +447,8 @@ export const toolSchemas = {
                     description: 'The UID of the parent block or page.'
                   },
                   "order": {
-                    type: ['number', 'string'],
-                    description: 'The position of the block under its parent (0 for top, "last" for bottom).'
+                    type: 'string',
+                    description: 'The position of the block under its parent ("0" for top, "last" for bottom).'
                   }
                 }
               }

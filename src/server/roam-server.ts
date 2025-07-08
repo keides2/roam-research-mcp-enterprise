@@ -336,7 +336,7 @@ export class RoamServer {
           capabilities: {
             tools: {
               ...Object.fromEntries(
-                Object.keys(toolSchemas).map((toolName) => [toolName, {}])
+                (Object.keys(toolSchemas) as Array<keyof typeof toolSchemas>).map((toolName) => [toolName, toolSchemas[toolName].inputSchema])
               ),
             },
             resources: { // Add resources capability
@@ -362,7 +362,7 @@ export class RoamServer {
           capabilities: {
             tools: {
               ...Object.fromEntries(
-                Object.keys(toolSchemas).map((toolName) => [toolName, {}])
+                (Object.keys(toolSchemas) as Array<keyof typeof toolSchemas>).map((toolName) => [toolName, toolSchemas[toolName].inputSchema])
               ),
             },
             resources: { // Add resources capability
@@ -408,7 +408,7 @@ export class RoamServer {
           capabilities: {
             tools: {
               ...Object.fromEntries(
-                Object.keys(toolSchemas).map((toolName) => [toolName, {}])
+                (Object.keys(toolSchemas) as Array<keyof typeof toolSchemas>).map((toolName) => [toolName, toolSchemas[toolName].inputSchema])
               ),
             },
           },
