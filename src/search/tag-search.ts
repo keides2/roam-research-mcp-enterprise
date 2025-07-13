@@ -22,9 +22,8 @@ export class TagSearchHandler extends BaseSearchHandler {
     }
 
     // Build query to find blocks referencing the page
-    const queryStr = `[:find ?block-uid ?block-str ?page-title
-                      :in $ ?title
-                      :where 
+    let queryArgs = [primary_tag];
+    let queryWhereClauses = `
                       [?ref-page :node/title ?title-match]
                       [(clojure.string/lower-case ?title-match) ?lower-title]
                       [(clojure.string/lower-case ?title) ?search-title]
@@ -33,10 +32,23 @@ export class TagSearchHandler extends BaseSearchHandler {
                       [?b :block/string ?block-str]
                       [?b :block/uid ?block-uid]
                       [?b :block/page ?p]
-                      [?p :node/title ?page-title]]`;
-    const queryParams = [primary_tag];
+                      [?p :node/title ?page-title]`;
+    
+    let inClause = `:in $ ?title`;
 
-    const rawResults = await q(this.graph, queryStr, queryParams) as [string, string, string?][];
+    if (targetPageUid) {
+      inClause += ` ?target-page-uid`;
+      queryArgs.push(targetPageUid);
+      queryWhereClauses += `
+                      [?p :block/uid ?target-page-uid]`;
+    }
+
+    const queryStr = `[:find ?block-uid ?block-str ?page-title
+                      ${inClause}
+                      :where 
+                      ${queryWhereClauses}]`;
+
+    const rawResults = await q(this.graph, queryStr, queryArgs) as [string, string, string?][];
     
     // Resolve block references in content
     const resolvedResults = await Promise.all(

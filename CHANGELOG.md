@@ -1,3 +1,8 @@
+v.0.30.5
+
+- FIXED: `roam_search_for_tag` now correctly scopes searches to a specific page when `page_title_uid` is provided.
+  - The Datalog query in `src/search/tag-search.ts` was updated to include the `targetPageUid` in the `where` clause.
+
 v.0.30.4
 
 - FIXED: Tools not loading properly in Gemini CLI
