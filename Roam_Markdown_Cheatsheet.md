@@ -14,6 +14,7 @@
 - Bullet points: - or \* followed by a space and the text
 - {{[[TODO]]}} todo text
 - {{[[DONE]]}} todo text
+- LaTeX: `$$E=mc^2$$` or `$$\sum_{i=1}^{n} i = \frac{n(n+1)}{2}$$`
 
 ## Roam-specific Markdown:
 
@@ -104,6 +105,10 @@ The provided markdown structure represents a Roam Research Kanban board. It star
 ```
 
 ---
+
+## Roam Hiccup
+
+This markdown structure allows embedding custom HTML or other content using Hiccup syntax. The `:hiccup` keyword is followed by a Clojure-like vector defining the HTML elements and their attributes in one block. This provides a powerful way to inject dynamic or custom components into your Roam graph. Example: `:hiccup [:iframe {:width "600" :height "400" :src "https://www.example.com"}]`
 
 ## Specific notes and preferences concerning my Roam Research graph
 
