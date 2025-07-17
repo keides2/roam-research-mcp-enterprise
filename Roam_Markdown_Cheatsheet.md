@@ -1,3 +1,5 @@
+!!!! IMPORTANT: Always consult this cheatsheet for correct Roam-flavored markdown syntax BEFORE making any Roam tool calls.
+
 # Roam Markdown Cheatsheet
 
 ⭐️📋 > > > START 📋⭐️
@@ -10,6 +12,8 @@
 - Image Embed: `![Alt text](URL)`
 - ^^Highlighted Text here^^
 - Bullet points: - or \* followed by a space and the text
+- {{[[TODO]]}} todo text
+- {{[[DONE]]}} todo text
 
 ## Roam-specific Markdown:
 
@@ -70,7 +74,34 @@ Example of a 4x4 table structure:
                     - Data 4.4
 ```
 
-IMPORTANT: Always consult this cheatsheet for correct Roam-flavored markdown syntax BEFORE making any Roam tool calls.
+## Roam Mermaid
+
+This markdown structure represents a Roam Research Mermaid diagram. It begins with a `{{[[mermaid]]}}` block, which serves as the primary container for the diagram definition. Nested underneath this block, using bullet points, is the actual Mermaid syntax. Each bullet point corresponds to a line of the Mermaid graph definition, allowing Roam to render a visual diagram based on the provided code. For example, `graph TD` specifies a top-down directed graph, and subsequent bullet points define nodes and their connections.
+
+```
+- {{[[mermaid]]}}
+    - graph TD
+        - A[Start] --> B{Decision Point}
+        - B -->|Yes| C[Process A]
+        - B -->|No| D[Process B]
+        - C --> E[Merge Results]
+        - D --> E
+        - E --> F[End]
+```
+
+## Roam Kanban Boards
+
+The provided markdown structure represents a Roam Research Kanban board. It starts with a `{{[[kanban]]}}` block, under which nested bullet points define the Kanban cards. Each top-level bullet point directly under `{{[[kanban]]}}` serves as a card title, and any further nested bullet points under a card title act as details or sub-items for that specific card.
+
+```
+- {{[[kanban]]}}
+    - card title 1
+        - bullet point 1.1
+        - bullet point 1.2
+    - card title 2
+        - bullet point 2.1
+        - bullet point 2.2
+```
 
 ---
 
