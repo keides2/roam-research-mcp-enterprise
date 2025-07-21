@@ -109,7 +109,7 @@ export class PageOperations {
       try {
         // Convert content array to MarkdownNode format expected by convertToRoamActions
         const nodes = content.map(block => ({
-          content: block.text.replace(/^#+\s*/, ''),
+          content: convertToRoamMarkdown(block.text.replace(/^#+\s*/, '')),
           level: block.level,
           ...(block.heading && { heading_level: block.heading }),
           children: []

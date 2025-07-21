@@ -96,7 +96,7 @@ export const toolSchemas = {
         },
         outline: {
           type: 'array',
-          description: 'Array of outline items with block text and explicit nesting level',
+          description: 'Array of outline items with block text and explicit nesting level. Must be a valid hierarchy: the first item must be level 1, and subsequent levels cannot increase by more than 1 at a time (e.g., a level 3 cannot follow a level 1).',
           items: {
             type: 'object',
             properties: {
@@ -106,7 +106,7 @@ export const toolSchemas = {
               },
               level: {
                 type: 'integer',
-                description: 'Indentation level (1-10, where 1 is top level)',
+                description: 'Indentation level (1-10, where 1 is top level). Levels must be sequential and cannot be skipped (e.g., a level 3 item cannot directly follow a level 1 item).',
                 minimum: 1,
                 maximum: 10
               },

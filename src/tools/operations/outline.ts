@@ -289,6 +289,13 @@ export class OutlineOperations {
 
     try {
       // Validate level sequence
+      if (validOutline.length > 0 && validOutline[0].level !== 1) {
+        throw new McpError(
+          ErrorCode.InvalidRequest,
+          'Invalid outline structure - the first item must be at level 1'
+        );
+      }
+      
       let prevLevel = 0;
       for (const item of validOutline) {
         // Level should not increase by more than 1 at a time

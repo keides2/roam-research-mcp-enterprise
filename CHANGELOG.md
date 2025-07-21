@@ -1,3 +1,9 @@
+v.0.30.7
+
+- FIXED: `roam_create_outline` now prevents errors from invalid outline structures by enforcing that outlines must start at level 1 and that subsequent levels cannot increase by more than 1 at a time.
+  - Updated the tool's schema in `src/tools/schemas.ts` with more explicit instructions to guide the LLM in generating valid hierarchical structures.
+  - Added stricter validation in `src/tools/operations/outline.ts` to reject outlines that do not start at level 1, providing a clearer error message.
+
 v.0.30.6
 
 - FIXED: `roam_create_page` now correctly strips heading markers (`#`) from block content before creation.
