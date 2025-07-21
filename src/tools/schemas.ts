@@ -426,7 +426,7 @@ export const toolSchemas = {
               "heading": {
                   type: "integer",
                   description: "Optional: The heading level (1, 2, or 3) for 'create-block' or 'update-block'.",
-                  enum: ["1", "2", "3"]
+                  enum: [1, 2, 3]
               },
               "text-align": {
                   type: "string",
@@ -447,8 +447,11 @@ export const toolSchemas = {
                     description: 'The UID of the parent block or page.'
                   },
                   "order": {
-                    type: 'string',
-                    description: 'The position of the block under its parent ("0" for top, "last" for bottom).'
+                    oneOf: [
+                        { type: 'integer', description: 'Zero-indexed position.' },
+                        { type: 'string', enum: ['first', 'last'], description: 'Position keyword.' }
+                    ],
+                    description: 'The position of the block under its parent (e.g., 0, 1, 2) or a keyword ("first", "last").'
                   }
                 }
               }
