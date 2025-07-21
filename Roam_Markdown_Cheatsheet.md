@@ -18,6 +18,7 @@
 
 ## Roam-specific Markdown:
 
+- Dates are in ordinal format: `[[January 1st, 2025]]`
 - Block references: ((block-id)) This inserts a reference to the content of a specific block.
 - Page references: [[Page name]] This creates a link to another page within your Roam graph.
 - Link to blocks: [Link Text](<((block-id))>) This will link to the block.

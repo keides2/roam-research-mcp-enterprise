@@ -349,8 +349,8 @@ function convertToRoamActions(
   parentUid: string,
   order: 'first' | 'last' | number = 'last'
 ): BatchAction[] {
-  // First convert nodes to blocks with UIDs, reversing to maintain original order
-  const blocks = convertNodesToBlocks([...nodes].reverse());
+  // First convert nodes to blocks with UIDs
+  const blocks = convertNodesToBlocks(nodes);
   const actions: BatchAction[] = [];
 
   // Helper function to recursively create actions

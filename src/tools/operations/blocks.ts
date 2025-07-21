@@ -115,15 +115,6 @@ export class BlockOperations {
           // No heading parameter, use original parsing logic
           const convertedContent = convertToRoamMarkdown(content);
           nodes = parseMarkdown(convertedContent);
-          
-          // If we have simple newline-separated content (no markdown formatting),
-          // and parseMarkdown created nodes at level 0, reverse them to maintain original order
-          if (nodes.every(node => node.level === 0 && !node.heading_level)) {
-            const lines = content.split('\n').filter(line => line.trim());
-            if (lines.length === nodes.length) {
-              nodes.reverse();
-            }
-          }
         }
         
         const actions = convertToRoamActions(nodes, targetPageUid, 'last');

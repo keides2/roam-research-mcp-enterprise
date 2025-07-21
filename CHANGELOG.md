@@ -1,3 +1,9 @@
+v.0.30.6
+
+- FIXED: `roam_create_page` now correctly strips heading markers (`#`) from block content before creation.
+- FIXED: Block creation order is now correct. Removed the incorrect `.reverse()` call in `convertToRoamActions` and the corresponding workaround in `createBlock`.
+- UPDATED: the cheat sheet for ordinal dates.
+
 v.0.30.5
 
 - FIXED: `roam_search_for_tag` now correctly scopes searches to a specific page when `page_title_uid` is provided.
