@@ -11,7 +11,6 @@ A Model Context Protocol (MCP) server that provides comprehensive access to Roam
 
 <a href="https://glama.ai/mcp/servers/fzfznyaflu"><img width="380" height="200" src="https://glama.ai/mcp/servers/fzfznyaflu/badge" alt="Roam Research MCP server" /></a>
 <a href="https://mseep.ai/app/2b3pro-roam-research-mcp"><img width="380" height="200" src="https://mseep.net/pr/2b3pro-roam-research-mcp-badge.png" alt="MseeP.ai Security Assessment Badge" /></a>
-<a href="https://smithery.ai/badge/roam-research-mcp"><img width="380" height="200" src="https://smithery.ai/server/roam-research-mcp" alt="smithery badge" /></a>
 
 ## Installation and Usage
 
