@@ -10,7 +10,7 @@
 A Model Context Protocol (MCP) server that provides comprehensive access to Roam Research's API functionality. This server enables AI assistants like Claude to interact with your Roam Research graph through a standardized interface. It supports standard input/output (stdio), HTTP Stream, and Server-Sent Events (SSE) communication. (A WORK-IN-PROGRESS, personal project not officially endorsed by Roam Research)
 
 <a href="https://glama.ai/mcp/servers/fzfznyaflu"><img width="380" height="200" src="https://glama.ai/mcp/servers/fzfznyaflu/badge" alt="Roam Research MCP server" /></a>
-<a href="https://mseep.ai/app/2b3pro-roam-research-mcp"><img width="380" height="200" src="https://mseep.net/pr/2b3pro-roam-research-mcp-badge.png" alt="MseeP.ai Security Assessment Badge" /></a>
+<a href="https://mseep.ai/app/2b3pro-roam-research-mcp"><img width="380" height="200" style="border:1px solid grey" src="https://mseep.net/pr/2b3pro-roam-research-mcp-badge.png" alt="MseeP.ai Security Assessment Badge" /></a>
 
 ## Installation and Usage
 
