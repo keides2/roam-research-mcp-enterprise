@@ -19,10 +19,10 @@
 ## Roam-specific Markdown:
 
 - Dates are in ordinal format: `[[January 1st, 2025]]`
-- Block references: ((block-id)) This inserts a reference to the content of a specific block.
-- Page references: [[Page name]] This creates a link to another page within your Roam graph.
-- Link to blocks: [Link Text](<((block-id))>) This will link to the block.
-- Embed block in a block: {{[[embed]]: ((block-id))}}
+- Block references: `((block-id))` This inserts a reference to the content of a specific block.
+- Page references: `[[Page name]]` This creates a link to another page within your Roam graph.
+- Link to blocks: `[Link Text](<((block-id))>)` This will link to the block.
+- Embed block in a block: `{{[[embed]]: ((block-id))}}`
 - To-do items: `{{[[TODO]]}} todo text` or `{{[[DONE]]}} todo text`
 - Syntax highlighting for fenced code blocks (add language next to backticks before fenced code block - all in one block) - Example:
   ```javascript
@@ -31,9 +31,9 @@
       }
   ```
 - Tags:
-  - one-word: #word
-  - multiple words: #[[two or more words]]
-  - hyphenated words: #self-esteem
+  - one-word: `#word`
+  - multiple words: `#[[two or more words]]`
+  - hyphenated words: `#self-esteem`
 
 ## Roam Tables
 

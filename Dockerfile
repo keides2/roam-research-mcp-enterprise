@@ -14,6 +14,7 @@ RUN --mount=type=cache,target=/root/.npm npm install
 # Copy source code and TypeScript configuration
 COPY src /app/src
 COPY tsconfig.json /app/tsconfig.json
+COPY Roam_Markdown_Cheatsheet.md /app/Roam_Markdown_Cheatsheet.md
 
 # Build the TypeScript project
 RUN npm run build
