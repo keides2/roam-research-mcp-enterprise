@@ -52,7 +52,7 @@ export const toolSchemas = {
         },
         content: {
           type: 'array',
-          description: 'Initial content for the page as an array of blocks with explicit nesting levels',
+          description: 'Initial content for the page as an array of blocks with explicit nesting levels. Note: While empty blocks (e.g., {"text": "", "level": 1}) can be used for visual spacing, they create empty entities in the database. Please use them sparingly and only for structural purposes, not for simple visual separation.',
           items: {
             type: 'object',
             properties: {
