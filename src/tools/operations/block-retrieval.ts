@@ -10,67 +10,75 @@ export class BlockRetrievalOperations {
       throw new McpError(ErrorCode.InvalidRequest, 'block_uid is required.');
     }
 
-    // Remove any Roam-specific formatting like ((UID))
     const block_uid = block_uid_raw.replace(/^\(\((.*)\)\)$/, '$1');
 
-    // Helper function to recursively fetch children
-    const fetchChildren = async (parentUid: string, currentDepth: number): Promise<RoamBlock[]> => {
-      if (currentDepth >= depth) {
-        return [];
+    const fetchChildren = async (parentUids: string[], currentDepth: number): Promise<Record<string, RoamBlock[]>> => {
+      if (currentDepth >= depth || parentUids.length === 0) {
+        return {};
       }
 
-      // Datomic query to find direct children of a block, ordered by their 'order' attribute
-      const childrenQuery = `[:find ?childUid ?childString ?childOrder ?childHeading
-                              :in $ ?parentUid
+      const childrenQuery = `[:find ?parentUid ?childUid ?childString ?childOrder ?childHeading
+                              :in $ [?parentUid ...]
                               :where [?parent :block/uid ?parentUid]
                                      [?child :block/parents ?parent]
                                      [?child :block/uid ?childUid]
                                      [?child :block/string ?childString]
                                      [?child :block/order ?childOrder]
-                                     [(get-else $ ?child :block/heading nil) ?childHeading]]`;
+                                     [(get-else $ ?child :block/heading 0) ?childHeading]]`;
 
-      const childrenResults = await q(this.graph, childrenQuery, [parentUid]) as [string, string, number, number | null][];
+      const childrenResults = await q(this.graph, childrenQuery, [parentUids]) as [string, string, string, number, number | null][];
 
-      // Sort children by order
-      childrenResults.sort((a, b) => a[2] - b[2]);
+      const childrenByParent: Record<string, RoamBlock[]> = {};
+      const allChildUids: string[] = [];
 
-      const children: RoamBlock[] = [];
-      for (const [childUid, childString, childOrder, childHeading] of childrenResults) {
-        const nestedChildren = await fetchChildren(childUid, currentDepth + 1);
-        children.push({
+      for (const [parentUid, childUid, childString, childOrder, childHeading] of childrenResults) {
+        if (!childrenByParent[parentUid]) {
+          childrenByParent[parentUid] = [];
+        }
+        childrenByParent[parentUid].push({
           uid: childUid,
           string: childString,
           order: childOrder,
           heading: childHeading || undefined,
-          children: nestedChildren,
+          children: [],
         });
+        allChildUids.push(childUid);
       }
-      return children;
+
+      const grandChildren = await fetchChildren(allChildUids, currentDepth + 1);
+
+      for (const parentUid in childrenByParent) {
+        for (const child of childrenByParent[parentUid]) {
+          child.children = grandChildren[child.uid] || [];
+        }
+        childrenByParent[parentUid].sort((a, b) => a.order - b.order);
+      }
+
+      return childrenByParent;
     };
 
     try {
-      // Fetch the root block details
       const rootBlockQuery = `[:find ?string ?order ?heading
                                :in $ ?blockUid
                                :where [?b :block/uid ?blockUid]
                                       [?b :block/string ?string]
                                       [?b :block/order ?order]
-                                      [(get-else $ ?b :block/heading nil) ?heading]]`;
+                                      [(get-else $ ?b :block/heading 0) ?heading]]`;
       const rootBlockResult = await q(this.graph, rootBlockQuery, [block_uid]) as [string, number, number | null] | null;
 
       if (!rootBlockResult) {
-        return null; // Block not found
+        return null;
       }
 
       const [rootString, rootOrder, rootHeading] = rootBlockResult;
-      const children = await fetchChildren(block_uid, 0);
+      const childrenMap = await fetchChildren([block_uid], 0);
 
       return {
         uid: block_uid,
         string: rootString,
         order: rootOrder,
         heading: rootHeading || undefined,
-        children: children,
+        children: childrenMap[block_uid] || [],
       };
     } catch (error) {
       throw new McpError(

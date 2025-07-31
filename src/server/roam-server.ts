@@ -305,6 +305,17 @@ export class RoamServer {
             };
           }
 
+          case 'roam_fetch_block_with_children': {
+            const { block_uid, depth } = request.params.arguments as {
+              block_uid: string;
+              depth?: number;
+            };
+            const result = await this.toolHandlers.fetchBlockWithChildren(block_uid, depth);
+            return {
+              content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+            };
+          }
+
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,

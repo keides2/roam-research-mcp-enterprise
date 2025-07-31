@@ -1,3 +1,8 @@
+v.0.30.9
+
+- FIXED: `roam_fetch_block_with_children` tool to use a more efficient batched recursive approach, avoiding "Too many requests" and other API errors.
+- The tool now fetches all children of a block in a single query per level of depth, significantly reducing the number of API calls.
+
 v.0.30.8
 
 - ADDED: `roam_fetch_block_with_children` tool
