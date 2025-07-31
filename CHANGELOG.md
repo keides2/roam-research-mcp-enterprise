@@ -1,3 +1,10 @@
+v.0.30.8
+
+- ADDED: `roam_fetch_block_with_children` tool
+  - Fetches a block by its UID along with its hierarchical children down to a specified depth.
+  - Automatically handles Roam's `((UID))` formatting, extracting the raw UID for lookup.
+  - This tool provides a direct and structured way to retrieve specific block content and its nested hierarchy.
+
 v.0.30.7
 
 - FIXED: `roam_create_outline` now prevents errors from invalid outline structures by enforcing that outlines must start at level 1 and that subsequent levels cannot increase by more than 1 at a time.
