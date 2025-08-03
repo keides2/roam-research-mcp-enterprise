@@ -1,3 +1,9 @@
+v.0.30.10
+
+- ENHANCED: `roam_markdown_cheatsheet` tool
+  - The tool now reads the `Roam_Markdown_Cheatsheet.md` and concatenates it with custom instructions from the path specified by the `CUSTOM_INSTRUCTIONS_PATH` environment variable, if the file exists. If the custom instructions file is not found, only the cheatsheet content is returned.
+- UPDATED: The description of `roam_markdown_cheatsheet` in `src/tools/schemas.ts` to reflect the new functionality.
+
 v.0.30.9
 
 - FIXED: `roam_fetch_block_with_children` tool to use a more efficient batched recursive approach, avoiding "Too many requests" and other API errors.
