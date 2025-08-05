@@ -1,6 +1,6 @@
 # Changelog
 
-v.0.31.0
+v.0.32.1
 
 - ENHANCED: `roam_create_outline` tool
   - The tool now returns a nested structure of UIDs (`NestedBlock[]`) for all created blocks, including children, accurately reflecting the outline hierarchy.
