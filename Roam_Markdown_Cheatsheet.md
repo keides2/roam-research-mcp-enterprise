@@ -112,7 +112,3 @@ The provided markdown structure represents a Roam Research Kanban board. It star
 This markdown structure allows embedding custom HTML or other content using Hiccup syntax. The `:hiccup` keyword is followed by a Clojure-like vector defining the HTML elements and their attributes in one block. This provides a powerful way to inject dynamic or custom components into your Roam graph. Example: `:hiccup [:iframe {:width "600" :height "400" :src "https://www.example.com"}]`
 
 ## Specific notes and preferences concerning my Roam Research graph
-
----
-
-⭐️📋 END (Cheat Sheet LOADED) < < < 📋⭐️
