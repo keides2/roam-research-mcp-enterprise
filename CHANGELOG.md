@@ -10,6 +10,11 @@ v.0.32.1
   - Removed `console.log` and `console.warn` statements from `src/tools/operations/outline.ts` to adhere to MCP server stdio communication rules.
 - ADDED: `NestedBlock` interface in `src/tools/types/index.ts` to represent the hierarchical structure of created blocks.
 
+v.0.32.2
+
+- FIXED: `roam_create_outline` now correctly respects the order of top-level blocks.
+  - Changed the default insertion order for batch actions from 'first' to 'last' in `src/tools/operations/outline.ts` to ensure blocks are added in the intended sequence.
+
 v.0.30.10
 
 - ENHANCED: `roam_markdown_cheatsheet` tool
