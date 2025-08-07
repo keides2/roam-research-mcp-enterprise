@@ -1,4 +1,4 @@
-# 企業環境でのRoam Research MCP統合 - 技術的知見レポート（サニタイズ版）
+# 企業環境でのRoam Research MCP統合 - 技術的知見レポート
 
 ## プロジェクト概要
 
@@ -37,7 +37,7 @@ export { API_TOKEN, GRAPH_NAME }; // 必要最小限に
 
 ### 2. フォーク戦略の成功 ✅
 
-**リポジトリ**: `username/roam-research-mcp-enterprise`
+**リポジトリ**: `keides2/roam-research-mcp-enterprise`
 **説明**: "Enterprise-focused MCP Server for Roam Research (stdio-only, firewall-safe)"
 
 #### フォークの価値
@@ -54,7 +54,7 @@ export { API_TOKEN, GRAPH_NAME }; // 必要最小限に
     "roam-research-enterprise": {
       "command": "node",
       "args": [
-        "C:/Users/USERNAME/mcp-servers/roam-research-mcp-enterprise/build/index.js"
+        "C:/Users/shimatani/mcp-servers/roam-research-mcp-enterprise/build/index.js"
       ],
       "env": {
         "ROAM_API_TOKEN": "your-actual-roam-token",
@@ -86,7 +86,7 @@ export { API_TOKEN, GRAPH_NAME }; // 必要最小限に
 
 2. **プロキシ経由では接続可能**
    ```bash
-   curl -x http://corporate-proxy.company.com:3128 https://roamresearch.com
+   curl -x http://gwproxy.daikin.co.jp:3128 https://roamresearch.com
    # ✅ HTML取得成功
    ```
 
@@ -99,9 +99,9 @@ export { API_TOKEN, GRAPH_NAME }; // 必要最小限に
 ##### 方法1: プロキシ環境変数設定
 ```json
 "env": {
-  "HTTP_PROXY": "http://corporate-proxy.company.com:3128",
-  "HTTPS_PROXY": "http://corporate-proxy.company.com:3128",
-  "NO_PROXY": "localhost,127.0.0.1,.company.com",
+  "HTTP_PROXY": "http://gwproxy.daikin.co.jp:3128",
+  "HTTPS_PROXY": "http://gwproxy.daikin.co.jp:3128",
+  "NO_PROXY": "localhost,127.0.0.1,.daikin.co.jp",
   "NODE_TLS_REJECT_UNAUTHORIZED": "0"
 }
 ```
@@ -157,62 +157,6 @@ Node.jsでのプロキシ対応は3層の対応が必要：
 2. **DNS解決**: カスタムDNS resolver
 3. **SDK内部処理**: ライブラリ固有の実装
 
-### 4. 成功事例との比較分析: FutureVuls・Coverity Connect
-
-#### 成功要因の技術的根拠
-
-**FutureVuls・Coverity Connect MCP Server**: 問題なく動作している理由
-
-##### 1. 純粋なREST API通信の優位性
-```http
-# 典型的なFutureVuls/Coverity API呼び出し
-GET /api/v1/vulnerabilities HTTP/1.1
-Host: api.futurevuls.com
-Authorization: Bearer [token]
-Content-Type: application/json
-```
-
-**企業ネットワークとの親和性:**
-- ✅ **標準ポート443使用**: ファイアウォール通過が確実
-- ✅ **単発リクエスト・レスポンス**: プロキシサーバーで処理しやすい  
-- ✅ **JSON over HTTP**: 企業セキュリティツールでの解析・監視が容易
-- ✅ **シンプルなBearer認証**: 複雑な認証フローが不要
-
-##### 2. プロキシサーバーとの完全互換性
-```bash
-# 企業プロキシ経由での通信例
-curl -x http://corporate-proxy.company.com:3128 \
-     -H "Authorization: Bearer token" \
-     https://api.futurevuls.com/vulnerabilities
-# → 問題なく動作
-```
-
-#### 通信アーキテクチャの比較
-
-| 項目 | FutureVuls/Coverity | Roam Research |
-|------|---------------------|---------------|
-| **API設計** | シンプルREST API | REST API + 複雑SDK |
-| **通信レイヤー** | 1層（直接API） | 3層（Claude↔MCP↔Roam） |
-| **認証方式** | Bearer Token | カスタムトークン+グラフID |
-| **プロキシ対応** | 標準対応 | SDK内部で非対応 |
-| **DNS依存性** | 標準的 | 企業フィルタリングと競合 |
-
-#### 企業環境での処理フロー
-
-**✅ 成功パターン (FutureVuls/Coverity):**
-```
-Claude Desktop → MCP Server → [企業プロキシ] → External API
-     ↑              ↑              ↑           ↑
-   stdio通信    シンプルHTTP      標準処理    REST応答
-```
-
-**❌ 失敗パターン (Roam Research):**
-```
-Claude Desktop → MCP Server → [DNS制限] ❌ → Roam API
-     ↑              ↑              ↑           ↑
-   stdio通信✅   複雑SDK処理    解決失敗     未到達
-```
-
 ## 次期解決策
 
 ### ハイブリッド戦略
@@ -255,12 +199,24 @@ Claude Desktop   HTTPS通信    MCPサーバー
 - フォーク戦略の有効性
 - 企業環境特化版の価値
 
-### 4. API設計の企業親和性
-- REST APIの単純性が企業環境安定動作の決定要因
-- 複雑なSDK実装が企業制約との競合要因
-- 標準プロトコル準拠の重要性
-
 ## 推奨事項
+
+### 他の企業ユーザー向け
+
+1. **まずstdio-only版を試行**
+   - HTTP/SSE機能が不要な環境では十分
+   - ポート制限問題を完全回避
+
+2. **プロキシ設定の段階的テスト**
+   ```bash
+   # 接続テスト手順
+   Test-NetConnection -ComputerName roamresearch.com -Port 443
+   curl -x http://your-proxy:port https://roamresearch.com
+   ```
+
+3. **リモートサーバー戦略の検討**
+   - 即座の解決が必要な場合
+   - クラウドコストと企業ポリシーのバランス
 
 ### Roam Research開発チーム向け
 
@@ -282,12 +238,10 @@ Claude Desktop   HTTPS通信    MCPサーバー
 
 一方で、Roam API接続の制限は企業ネットワークポリシーレベルの問題であり、技術的解決だけでは限界があることも判明しました。
 
-**重要な発見**: FutureVulsとCoverity ConnectのMCP Serverが企業環境で問題なく動作する理由は、**純粋なREST API設計**と**企業プロキシとの標準的互換性**にあります。これは偶然ではなく、企業ネットワークアーキテクチャとの自然な親和性による必然的結果です。
-
-この知見は、同様の企業環境でAPI統合を行う他のプロジェクトにも応用可能な貴重な経験となりました。特に、**API設計段階での企業環境配慮**の重要性を実証する結果となりました。
+この知見は、同様の企業環境でAPI統合を行う他のプロジェクトにも応用可能な貴重な経験となりました。
 
 ---
 
 **作成日**: 2025年8月7日  
-**プロジェクト**: username/roam-research-mcp-enterprise  
+**プロジェクト**: keides2/roam-research-mcp-enterprise  
 **次期目標**: リモートMCPサーバー構築 + Roam Research改善要望

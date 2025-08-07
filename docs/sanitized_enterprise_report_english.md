@@ -157,6 +157,62 @@ Node.js proxy support requires 3-layer approach:
 2. **DNS resolution**: Custom DNS resolver
 3. **SDK internal processing**: Library-specific implementation
 
+### 4. Comparative Analysis with Success Cases: FutureVuls・Coverity Connect
+
+#### Technical Rationale for Success Factors
+
+**FutureVuls・Coverity Connect MCP Server**: Works without issues
+
+##### 1. Superiority of Pure REST API Communication
+```http
+# Typical FutureVuls/Coverity API call
+GET /api/v1/vulnerabilities HTTP/1.1
+Host: api.futurevuls.com
+Authorization: Bearer [token]
+Content-Type: application/json
+```
+
+**Enterprise Network Compatibility:**
+- ✅ **Standard port 443 usage**: Reliable firewall traversal
+- ✅ **Single request-response pattern**: Easy proxy server processing  
+- ✅ **JSON over HTTP**: Easy analysis and monitoring by enterprise security tools
+- ✅ **Simple Bearer authentication**: No complex authentication flows required
+
+##### 2. Complete Compatibility with Proxy Servers
+```bash
+# Enterprise proxy communication example
+curl -x http://corporate-proxy.company.com:3128 \
+     -H "Authorization: Bearer token" \
+     https://api.futurevuls.com/vulnerabilities
+# → Works without issues
+```
+
+#### Communication Architecture Comparison
+
+| Item | FutureVuls/Coverity | Roam Research |
+|------|---------------------|---------------|
+| **API Design** | Simple REST API | REST API + Complex SDK |
+| **Communication Layers** | 1 layer (Direct API) | 3 layers (Claude↔MCP↔Roam) |
+| **Authentication** | Bearer Token | Custom Token + Graph ID |
+| **Proxy Support** | Standard compliant | SDK internal non-compliant |
+| **DNS Dependency** | Standard | Conflicts with enterprise filtering |
+
+#### Enterprise Environment Processing Flow
+
+**✅ Success Pattern (FutureVuls/Coverity):**
+```
+Claude Desktop → MCP Server → [Corporate Proxy] → External API
+     ↑              ↑              ↑           ↑
+   stdio comm    Simple HTTP    Standard proc   REST response
+```
+
+**❌ Failure Pattern (Roam Research):**
+```
+Claude Desktop → MCP Server → [DNS restriction] ❌ → Roam API
+     ↑              ↑              ↑           ↑
+   stdio comm✅   Complex SDK    Resolution fail  Unreachable
+```
+
 ## Future Solutions
 
 ### Hybrid Strategy
@@ -199,24 +255,12 @@ Claude Desktop   HTTPS Communication    MCP Server
 - Effectiveness of fork strategies
 - Value of enterprise environment specialized versions
 
+### 4. Enterprise Compatibility of API Design
+- Simplicity of REST API as decisive factor for stable enterprise operation
+- Complex SDK implementation as competing factor with enterprise constraints
+- Importance of standard protocol compliance
+
 ## Recommendations
-
-### For Other Enterprise Users
-
-1. **Try stdio-only version first**
-   - Sufficient for environments that don't need HTTP/SSE features
-   - Complete avoidance of port restriction issues
-
-2. **Staged proxy setting tests**
-   ```bash
-   # Connection test procedure
-   Test-NetConnection -ComputerName roamresearch.com -Port 443
-   curl -x http://your-proxy:port https://roamresearch.com
-   ```
-
-3. **Consider remote server strategy**
-   - When immediate solution is needed
-   - Balance cloud costs with enterprise policies
 
 ### For Roam Research Development Team
 
@@ -238,7 +282,9 @@ This project successfully identified technical barriers in enterprise environmen
 
 However, Roam API connection limitations were found to be enterprise network policy-level issues, revealing limits to purely technical solutions.
 
-These insights provide valuable experience applicable to other projects performing API integration in similar enterprise environments.
+**Key Discovery**: The reason FutureVuls and Coverity Connect MCP Servers work without issues in enterprise environments is due to their **pure REST API design** and **standard compatibility with corporate proxies**. This is not coincidental, but a natural result of inherent compatibility with enterprise network architecture.
+
+These insights provide valuable experience applicable to other projects performing API integration in similar enterprise environments. Particularly, this demonstrates the importance of **enterprise environment considerations during API design phases**.
 
 ---
 

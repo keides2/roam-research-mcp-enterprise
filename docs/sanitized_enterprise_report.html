@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>sanitized_enterprise_report.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="%E4%BC%81%E6%A5%AD%E7%92%B0%E5%A2%83%E3%81%A7%E3%81%AEroam-research-mcp%E7%B5%B1%E5%90%88---%E6%8A%80%E8%A1%93%E7%9A%84%E7%9F%A5%E8%A6%8B%E3%83%AC%E3%83%9D%E3%83%BC%E3%83%88%E3%82%B5%E3%83%8B%E3%82%BF%E3%82%A4%E3%82%BA%E7%89%88">企業環境でのRoam Research MCP統合 - 技術的知見レポート（サニタイズ版）</h1>
+<h2 id="%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E6%A6%82%E8%A6%81">プロジェクト概要</h2>
+<p><strong>目的</strong>: 企業ネットワーク環境で2b3pro/roam-research-mcpをClaude Desktopと統合<br>
+<strong>期間</strong>: 2025年8月7日<br>
+<strong>結果</strong>: 部分的成功（MCP統合成功、API接続制限で一部機能制限）</p>
+<h2 id="%E6%88%90%E5%8A%9F%E3%81%97%E3%81%9F%E5%8F%96%E3%82%8A%E7%B5%84%E3%81%BF">成功した取り組み</h2>
+<h3 id="1-httpsse%E6%A9%9F%E8%83%BD%E3%81%AE%E5%AE%8C%E5%85%A8%E5%89%8A%E9%99%A4-%E2%9C%85">1. HTTP/SSE機能の完全削除 ✅</h3>
+<p><strong>問題</strong>: 企業ファイアウォールによるポート8088/8087の制限<br>
+<strong>解決</strong>: stdio-only版への改変</p>
+<h4 id="%E5%89%8A%E9%99%A4%E3%81%97%E3%81%9F%E3%82%B3%E3%83%BC%E3%83%89">削除したコード</h4>
+<pre class="hljs"><code><div><span class="hljs-comment">// src/server/roam-server.ts から削除</span>
+<span class="hljs-keyword">import</span> { StreamableHTTPServerTransport } <span class="hljs-keyword">from</span> <span class="hljs-string">'@modelcontextprotocol/sdk/server/streamableHttp.js'</span>;
+<span class="hljs-keyword">import</span> { SSEServerTransport } <span class="hljs-keyword">from</span> <span class="hljs-string">'@modelcontextprotocol/sdk/server/sse.js'</span>;
+<span class="hljs-keyword">import</span> { createServer, IncomingMessage, ServerResponse } <span class="hljs-keyword">from</span> <span class="hljs-string">'node:http'</span>;
+<span class="hljs-keyword">import</span> { findAvailablePort } <span class="hljs-keyword">from</span> <span class="hljs-string">'../utils/net.js'</span>;
+<span class="hljs-keyword">import</span> { CORS_ORIGIN } <span class="hljs-keyword">from</span> <span class="hljs-string">'../config/environment.js'</span>;
+
+<span class="hljs-comment">// async run()メソッドのHTTP関連部分（約40行）を削除</span>
+</div></code></pre>
+<h4 id="%E5%89%8A%E9%99%A4%E3%81%97%E3%81%9F%E3%83%95%E3%82%A1%E3%82%A4%E3%83%AB">削除したファイル</h4>
+<ul>
+<li><code>src/utils/net.ts</code> (ポート確認機能)</li>
+</ul>
+<h4 id="%E7%92%B0%E5%A2%83%E5%A4%89%E6%95%B0%E3%81%AE%E6%95%B4%E7%90%86">環境変数の整理</h4>
+<pre class="hljs"><code><div><span class="hljs-comment">// src/config/environment.ts</span>
+<span class="hljs-comment">// 削除: HTTP_STREAM_PORT, SSE_PORT, CORS_ORIGIN</span>
+<span class="hljs-keyword">export</span> { API_TOKEN, GRAPH_NAME }; <span class="hljs-comment">// 必要最小限に</span>
+</div></code></pre>
+<h3 id="2-%E3%83%95%E3%82%A9%E3%83%BC%E3%82%AF%E6%88%A6%E7%95%A5%E3%81%AE%E6%88%90%E5%8A%9F-%E2%9C%85">2. フォーク戦略の成功 ✅</h3>
+<p><strong>リポジトリ</strong>: <code>username/roam-research-mcp-enterprise</code><br>
+<strong>説明</strong>: &quot;Enterprise-focused MCP Server for Roam Research (stdio-only, firewall-safe)&quot;</p>
+<h4 id="%E3%83%95%E3%82%A9%E3%83%BC%E3%82%AF%E3%81%AE%E4%BE%A1%E5%80%A4">フォークの価値</h4>
+<ul>
+<li>企業環境特化の機能</li>
+<li>オリジナルと明確な区別</li>
+<li>独立した開発・保守</li>
+</ul>
+<h3 id="3-claude-desktop%E7%B5%B1%E5%90%88%E3%81%AE%E6%88%90%E5%8A%9F-%E2%9C%85">3. Claude Desktop統合の成功 ✅</h3>
+<p><strong>設定ファイル</strong>: <code>%APPDATA%\Claude\claude_desktop_config.json</code></p>
+<pre class="hljs"><code><div>{
+  <span class="hljs-attr">"mcpServers"</span>: {
+    <span class="hljs-attr">"roam-research-enterprise"</span>: {
+      <span class="hljs-attr">"command"</span>: <span class="hljs-string">"node"</span>,
+      <span class="hljs-attr">"args"</span>: [
+        <span class="hljs-string">"C:/Users/USERNAME/mcp-servers/roam-research-mcp-enterprise/build/index.js"</span>
+      ],
+      <span class="hljs-attr">"env"</span>: {
+        <span class="hljs-attr">"ROAM_API_TOKEN"</span>: <span class="hljs-string">"your-actual-roam-token"</span>,
+        <span class="hljs-attr">"ROAM_GRAPH_NAME"</span>: <span class="hljs-string">"your-actual-graph-name"</span>
+      }
+    }
+  }
+}
+</div></code></pre>
+<p><strong>結果</strong>: MCP接続成功、ツール認識完了</p>
+<h2 id="%E8%A7%A3%E6%B1%BA%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%8B%E3%81%A3%E3%81%9F%E5%95%8F%E9%A1%8C">解決できなかった問題</h2>
+<h3 id="roam-api%E6%8E%A5%E7%B6%9A%E5%88%B6%E9%99%90-%E2%9D%8C">Roam API接続制限 ❌</h3>
+<p><strong>エラー</strong>: <code>MCP error -32603: Roam API error: fetch failed</code></p>
+<h4 id="%E5%8E%9F%E5%9B%A0%E5%88%86%E6%9E%90">原因分析</h4>
+<ol>
+<li>
+<p><strong>DNS解決の失敗</strong></p>
+<pre class="hljs"><code><div>Test-NetConnection -ComputerName roamresearch.com -Port 443
+<span class="hljs-comment"># WARNING: Name resolution of roamresearch.com failed</span>
+
+nslookup roamresearch.com  
+<span class="hljs-comment"># DNS request timed out</span>
+</div></code></pre>
+</li>
+<li>
+<p><strong>プロキシ経由では接続可能</strong></p>
+<pre class="hljs"><code><div>curl -x http://corporate-proxy.company.com:3128 https://roamresearch.com
+<span class="hljs-comment"># ✅ HTML取得成功</span>
+</div></code></pre>
+</li>
+<li>
+<p><strong>Node.js Roam API SDKのプロキシ非対応</strong></p>
+<ul>
+<li>環境変数での設定では不十分</li>
+<li>SDK内部のHTTP接続がプロキシ設定を認識しない</li>
+</ul>
+</li>
+</ol>
+<h4 id="%E8%A9%A6%E8%A1%8C%E3%81%97%E3%81%9F%E8%A7%A3%E6%B1%BA%E7%AD%96%E3%81%99%E3%81%B9%E3%81%A6%E5%A4%B1%E6%95%97">試行した解決策（すべて失敗）</h4>
+<h5 id="%E6%96%B9%E6%B3%951-%E3%83%97%E3%83%AD%E3%82%AD%E3%82%B7%E7%92%B0%E5%A2%83%E5%A4%89%E6%95%B0%E8%A8%AD%E5%AE%9A">方法1: プロキシ環境変数設定</h5>
+<pre class="hljs"><code><div><span class="hljs-string">"env"</span>: {
+  <span class="hljs-attr">"HTTP_PROXY"</span>: <span class="hljs-string">"http://corporate-proxy.company.com:3128"</span>,
+  <span class="hljs-attr">"HTTPS_PROXY"</span>: <span class="hljs-string">"http://corporate-proxy.company.com:3128"</span>,
+  <span class="hljs-attr">"NO_PROXY"</span>: <span class="hljs-string">"localhost,127.0.0.1,.company.com"</span>,
+  <span class="hljs-attr">"NODE_TLS_REJECT_UNAUTHORIZED"</span>: <span class="hljs-string">"0"</span>
+}
+</div></code></pre>
+<h5 id="%E6%96%B9%E6%B3%952-%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%83%97%E3%83%AD%E3%82%AD%E3%82%B7">方法2: ローカルプロキシ</h5>
+<pre class="hljs"><code><div><span class="hljs-string">"env"</span>: {
+  <span class="hljs-attr">"HTTP_PROXY"</span>: <span class="hljs-string">"http://127.0.0.1:17200"</span>,
+  <span class="hljs-attr">"HTTPS_PROXY"</span>: <span class="hljs-string">"http://127.0.0.1:17200"</span>
+}
+</div></code></pre>
+<h5 id="%E6%96%B9%E6%B3%953-%E3%82%B3%E3%83%BC%E3%83%89%E3%83%AC%E3%83%99%E3%83%AB%E3%81%AE%E3%83%97%E3%83%AD%E3%82%AD%E3%82%B7%E5%AF%BE%E5%BF%9C">方法3: コードレベルのプロキシ対応</h5>
+<pre class="hljs"><code><div><span class="hljs-comment">// 依存関係追加</span>
+npm install http-proxy-agent https-proxy-agent node-fetch@<span class="hljs-number">2</span>
+
+<span class="hljs-comment">// constructor内でglobalAgent設定</span>
+<span class="hljs-keyword">const</span> { HttpProxyAgent } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'http-proxy-agent'</span>);
+<span class="hljs-keyword">const</span> { HttpsProxyAgent } = <span class="hljs-built_in">require</span>(<span class="hljs-string">'https-proxy-agent'</span>);
+<span class="hljs-built_in">require</span>(<span class="hljs-string">'http'</span>).globalAgent = <span class="hljs-keyword">new</span> HttpProxyAgent(httpProxy);
+<span class="hljs-built_in">require</span>(<span class="hljs-string">'https'</span>).globalAgent = <span class="hljs-keyword">new</span> HttpsProxyAgent(httpsProxy);
+</div></code></pre>
+<h2 id="%E6%8A%80%E8%A1%93%E7%9A%84%E7%9F%A5%E8%A6%8B">技術的知見</h2>
+<h3 id="1-%E4%BC%81%E6%A5%AD%E3%83%8D%E3%83%83%E3%83%88%E3%83%AF%E3%83%BC%E3%82%AF%E5%88%B6%E9%99%90%E3%81%AE%E6%AE%B5%E9%9A%8E%E7%9A%84%E7%90%86%E8%A7%A3">1. 企業ネットワーク制限の段階的理解</h3>
+<pre class="hljs"><code><div>Layer 1: ファイアウォール → ポート制限 ✅解決済み
+Layer 2: DNS制限 → 外部ドメイン解決阻止 ❌未解決
+Layer 3: API通信制限 → 企業ポリシーレベル ❌未解決
+</div></code></pre>
+<h3 id="2-mcp-vs-roam-api-%E3%81%AE%E5%88%86%E9%9B%A2">2. MCP vs Roam API の分離</h3>
+<p><strong>重要な発見</strong>: MCP接続とRoam API接続は別の問題</p>
+<ul>
+<li>✅ <strong>MCP接続</strong>: stdio経由で完全に機能</li>
+<li>❌ <strong>Roam API接続</strong>: 企業ネットワーク制限で失敗</li>
+</ul>
+<p><strong>証明</strong>:</p>
+<pre class="hljs"><code><div><span class="hljs-comment">// ネットワーク不要なツールは正常動作</span>
+roam_markdown_cheatsheet → ✅ 成功
+roam_fetch_page_by_title → ❌ fetch failed
+</div></code></pre>
+<h3 id="3-%E3%83%97%E3%83%AD%E3%82%AD%E3%82%B7%E5%AF%BE%E5%BF%9C%E3%81%AE%E8%A4%87%E9%9B%91%E3%81%95">3. プロキシ対応の複雑さ</h3>
+<p>Node.jsでのプロキシ対応は3層の対応が必要：</p>
+<ol>
+<li><strong>HTTP/HTTPS接続</strong>: <code>http-proxy-agent</code>, <code>https-proxy-agent</code></li>
+<li><strong>DNS解決</strong>: カスタムDNS resolver</li>
+<li><strong>SDK内部処理</strong>: ライブラリ固有の実装</li>
+</ol>
+<h2 id="%E6%AC%A1%E6%9C%9F%E8%A7%A3%E6%B1%BA%E7%AD%96">次期解決策</h2>
+<h3 id="%E3%83%8F%E3%82%A4%E3%83%96%E3%83%AA%E3%83%83%E3%83%89%E6%88%A6%E7%95%A5">ハイブリッド戦略</h3>
+<h4 id="phase-1-%E3%83%AA%E3%83%A2%E3%83%BC%E3%83%88mcp%E3%82%B5%E3%83%BC%E3%83%90%E3%83%BC%E6%A7%8B%E7%AF%89%E7%9F%AD%E6%9C%9F%E8%A7%A3%E6%B1%BA">Phase 1: リモートMCPサーバー構築（短期解決）</h4>
+<pre class="hljs"><code><div>企業内PC → 企業プロキシ → AWS Lambda → Roam API
+    ↑               ↑              ↑
+Claude Desktop   HTTPS通信    MCPサーバー
+</div></code></pre>
+<p><strong>技術スタック</strong>:</p>
+<ul>
+<li>AWS Lambda / Google Cloud Functions</li>
+<li>Express.js + MCP Protocol</li>
+<li>JWT Authentication</li>
+<li>Roam API プロキシ機能</li>
+</ul>
+<p><strong>実装期間</strong>: 1-2週間<br>
+<strong>運用コスト</strong>: $5-20/月</p>
+<h4 id="phase-2-roam-research%E6%94%B9%E5%96%84%E8%A6%81%E6%9C%9B%E9%95%B7%E6%9C%9F%E8%A7%A3%E6%B1%BA">Phase 2: Roam Research改善要望（長期解決）</h4>
+<p><strong>GitHub Issue作成</strong>:</p>
+<ul>
+<li>タイトル: &quot;Enterprise proxy support for Roam API SDK&quot;</li>
+<li>企業環境でのプロキシ対応要求</li>
+<li>具体的なエラーログと解決案</li>
+<li>ビジネスケースの説明</li>
+</ul>
+<h2 id="%E5%AD%A6%E7%BF%92%E6%88%90%E6%9E%9C">学習成果</h2>
+<h3 id="1-mcp%E3%82%A2%E3%83%BC%E3%82%AD%E3%83%86%E3%82%AF%E3%83%81%E3%83%A3%E3%81%AE%E7%90%86%E8%A7%A3">1. MCPアーキテクチャの理解</h3>
+<ul>
+<li>stdio vs HTTP/SSE transport の違い</li>
+<li>企業環境での制約とそれに対する適応</li>
+</ul>
+<h3 id="2-%E4%BC%81%E6%A5%AD%E3%83%8D%E3%83%83%E3%83%88%E3%83%AF%E3%83%BC%E3%82%AF%E3%81%AE%E8%A4%87%E9%9B%91%E6%80%A7">2. 企業ネットワークの複雑性</h3>
+<ul>
+<li>ファイアウォール、DNS制限、プロキシ設定の段階的理解</li>
+<li>セキュリティポリシーとAPI統合の課題</li>
+</ul>
+<h3 id="3-%E3%82%AA%E3%83%BC%E3%83%97%E3%83%B3%E3%82%BD%E3%83%BC%E3%82%B9%E6%94%B9%E5%96%84%E3%81%AE%E5%AE%9F%E8%B7%B5">3. オープンソース改善の実践</h3>
+<ul>
+<li>フォーク戦略の有効性</li>
+<li>企業環境特化版の価値</li>
+</ul>
+<h2 id="%E6%8E%A8%E5%A5%A8%E4%BA%8B%E9%A0%85">推奨事項</h2>
+<h3 id="%E4%BB%96%E3%81%AE%E4%BC%81%E6%A5%AD%E3%83%A6%E3%83%BC%E3%82%B6%E3%83%BC%E5%90%91%E3%81%91">他の企業ユーザー向け</h3>
+<ol>
+<li>
+<p><strong>まずstdio-only版を試行</strong></p>
+<ul>
+<li>HTTP/SSE機能が不要な環境では十分</li>
+<li>ポート制限問題を完全回避</li>
+</ul>
+</li>
+<li>
+<p><strong>プロキシ設定の段階的テスト</strong></p>
+<pre class="hljs"><code><div><span class="hljs-comment"># 接続テスト手順</span>
+Test-NetConnection -ComputerName roamresearch.com -Port 443
+curl -x http://your-proxy:port https://roamresearch.com
+</div></code></pre>
+</li>
+<li>
+<p><strong>リモートサーバー戦略の検討</strong></p>
+<ul>
+<li>即座の解決が必要な場合</li>
+<li>クラウドコストと企業ポリシーのバランス</li>
+</ul>
+</li>
+</ol>
+<h3 id="roam-research%E9%96%8B%E7%99%BA%E3%83%81%E3%83%BC%E3%83%A0%E5%90%91%E3%81%91">Roam Research開発チーム向け</h3>
+<ol>
+<li>
+<p><strong>SDK内プロキシ対応の強化</strong></p>
+<ul>
+<li><code>http-proxy-agent</code>の統合</li>
+<li>環境変数ベースの自動設定</li>
+</ul>
+</li>
+<li>
+<p><strong>企業向けドキュメントの整備</strong></p>
+<ul>
+<li>プロキシ設定ガイド</li>
+<li>企業ネットワーク制約の対応方法</li>
+</ul>
+</li>
+<li>
+<p><strong>エンタープライズ機能の検討</strong></p>
+<ul>
+<li>On-premises deployment option</li>
+<li>Enterprise SSO integration</li>
+</ul>
+</li>
+</ol>
+<h2 id="%E7%B5%90%E8%AB%96">結論</h2>
+<p>今回のプロジェクトにより、企業環境でのMCP統合における技術的障壁を明確に特定し、部分的な解決を達成しました。HTTP/SSE削除による<code>stdio-only</code>版の作成は完全に成功し、企業ファイアウォール問題を解決しました。</p>
+<p>一方で、Roam API接続の制限は企業ネットワークポリシーレベルの問題であり、技術的解決だけでは限界があることも判明しました。</p>
+<p>この知見は、同様の企業環境でAPI統合を行う他のプロジェクトにも応用可能な貴重な経験となりました。</p>
+<hr>
+<p><strong>作成日</strong>: 2025年8月7日<br>
+<strong>プロジェクト</strong>: username/roam-research-mcp-enterprise<br>
+<strong>次期目標</strong>: リモートMCPサーバー構築 + Roam Research改善要望</p>
+
+</body>
+</html>
