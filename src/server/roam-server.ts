@@ -1,7 +1,8 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+// HTTP/SSE関連コードを削除する
+// import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+// import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import {
   CallToolRequestSchema,
   ErrorCode,
@@ -12,15 +13,18 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { initializeGraph, type Graph } from '@roam-research/roam-api-sdk';
-import { API_TOKEN, GRAPH_NAME, HTTP_STREAM_PORT, SSE_PORT } from '../config/environment.js';
+// import { API_TOKEN, GRAPH_NAME, HTTP_STREAM_PORT, SSE_PORT } from '../config/environment.js';
+import { API_TOKEN, GRAPH_NAME } from '../config/environment.js';
 import { toolSchemas } from '../tools/schemas.js';
 import { ToolHandlers } from '../tools/tool-handlers.js';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
-import { createServer, IncomingMessage, ServerResponse } from 'node:http';
+// import { createServer, IncomingMessage, ServerResponse } from 'node:http';
 import { fileURLToPath } from 'node:url';
-import { findAvailablePort } from '../utils/net.js';
-import { CORS_ORIGIN } from '../config/environment.js';
+// import { findAvailablePort } from '../utils/net.js';
+// import { CORS_ORIGIN } from '../config/environment.js';
+// DNS解決もプロキシ経由にする
+import { lookup } from 'dns';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -35,6 +39,29 @@ export class RoamServer {
   private graph: Graph;
 
   constructor() {
+    // 企業プロキシ対応の強化
+    if (process.env.HTTP_PROXY || process.env.HTTPS_PROXY) {
+      const { HttpProxyAgent } = require('http-proxy-agent');
+      const { HttpsProxyAgent } = require('https-proxy-agent');
+      
+      const httpProxy = process.env.HTTP_PROXY;
+      const httpsProxy = process.env.HTTPS_PROXY;
+      
+      // グローバルエージェントを設定
+      if (httpProxy) {
+        require('http').globalAgent = new HttpProxyAgent(httpProxy);
+      }
+      if (httpsProxy) {
+        require('https').globalAgent = new HttpsProxyAgent(httpsProxy);
+      }
+      
+      // TLS証明書検証を無効化
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+      
+      // Fetch APIのproxyサポート
+      global.fetch = require('node-fetch');
+    }
+  
     // console.log('RoamServer: Constructor started.');
     try {
       this.graph = initializeGraph({
@@ -365,6 +392,7 @@ export class RoamServer {
       await stdioMcpServer.connect(stdioTransport);
       // console.log('RoamServer: stdioTransport connected. Attempting to create httpMcpServer...');
 
+      /*
       const httpMcpServer = new Server(
         {
           name: 'roam-research-http', // A distinct name for the HTTP server
@@ -421,6 +449,7 @@ export class RoamServer {
       httpServer.listen(availableHttpPort, () => {
         // // console.log(`MCP Roam Research server running HTTP Stream on port ${availableHttpPort}`);
       });
+      */
 
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : String(error);

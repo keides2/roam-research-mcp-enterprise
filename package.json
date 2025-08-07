@@ -41,7 +41,10 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.13.2",
     "@roam-research/roam-api-sdk": "^0.10.0",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "http-proxy-agent": "^7.0.2",
+    "https-proxy-agent": "^7.0.6",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
